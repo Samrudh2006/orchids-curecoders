@@ -23,8 +23,8 @@ const Hero: React.FC<HeroProps> = ({ onTryDemo }) => {
   return (
     <div className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800"></div>
-      <div 
-        className="absolute inset-0 bg-no-repeat bg-cover bg-center opacity-10 dark:opacity-20" 
+      <div
+        className="absolute inset-0 bg-no-repeat bg-cover bg-center opacity-30 dark:opacity-20"
         style={{backgroundImage: "url('https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=2070&auto=format&fit=crop')"}}
       ></div>
       <MoleculeParticles />

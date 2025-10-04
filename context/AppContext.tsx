@@ -36,7 +36,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [isReportReady, setIsReportReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+    const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>(() => {
+        const stored = localStorage.getItem('searchHistoryDetailed');
+        if (stored) {
+            const detailed = JSON.parse(stored);
+            return detailed.slice(0, 5).map((item: any) => ({ id: item.id, prompt: item.prompt }));
+        }
+        return [];
+    });
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isChatting, setIsChatting] = useState(false);
 
@@ -122,7 +129,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 setError("All agents failed to produce results.");
             }
 
-            setSearchHistory(prev => [{ id: new Date().toISOString(), prompt: currentPrompt }, ...prev.filter(item => item.prompt !== currentPrompt)].slice(0, 5));
+            const historyItem = {
+                id: new Date().toISOString(),
+                prompt: currentPrompt,
+                summary: finalSummary,
+                timestamp: new Date().toISOString(),
+                agentCount: successfulResults.length
+            };
+
+            const detailedHistory = JSON.parse(localStorage.getItem('searchHistoryDetailed') || '[]');
+            const updatedDetailed = [historyItem, ...detailedHistory.filter((item: any) => item.prompt !== currentPrompt)];
+            localStorage.setItem('searchHistoryDetailed', JSON.stringify(updatedDetailed));
+
+            setSearchHistory(prev => [{ id: historyItem.id, prompt: currentPrompt }, ...prev.filter(item => item.prompt !== currentPrompt)].slice(0, 5));
 
         } catch (e) {
             const errorMsg = e instanceof Error ? e.message : 'An orchestration error occurred';
