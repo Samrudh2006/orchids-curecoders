@@ -26,18 +26,32 @@ const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
     };
 
     return (
-        <div className="bg-white p-8 font-sans" style={{ width: '800px' }}>
-            {/* Header */}
-            <div className="flex justify-between items-center pb-4 border-b">
-                <div className="flex items-center space-x-3">
-                    <Logo className="w-10 h-10" />
-                    <span className="font-display font-bold text-xl text-slate-800">CureCoders</span>
+        <div className="relative bg-white p-8 font-sans" style={{ width: '800px', minHeight: '1000px' }}>
+            {/* Background Image */}
+            <div
+                className="absolute inset-0 opacity-5 bg-cover bg-center pointer-events-none"
+                style={{
+                    backgroundImage: "url('https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=2070&auto=format&fit=crop')",
+                    zIndex: 0
+                }}
+            />
+
+            {/* Content Container */}
+            <div className="relative" style={{ zIndex: 1 }}>
+                {/* Header */}
+                <div className="flex justify-between items-center pb-4 border-b border-gray-300">
+                    <div className="flex items-center space-x-3">
+                        <Logo className="w-12 h-12" />
+                        <div>
+                            <span className="font-display font-bold text-2xl text-slate-800">CureCoders</span>
+                            <p className="text-xs text-gray-500">Smart Care, Powered by AI</p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <h1 className="text-2xl font-bold font-display text-gray-800">AI Research Report</h1>
+                        <p className="text-xs text-gray-500">Generated on: {new Date().toLocaleDateString()}</p>
+                    </div>
                 </div>
-                <div className="text-right">
-                    <h1 className="text-2xl font-bold font-display text-gray-800">AI Research Report</h1>
-                    <p className="text-xs text-gray-500">Generated on: {new Date().toLocaleDateString()}</p>
-                </div>
-            </div>
 
             {/* Prompt Section */}
             <div className="mt-8">
@@ -68,9 +82,11 @@ const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
                 </div>
             </div>
 
-             {/* Footer */}
-            <div className="mt-12 text-center text-xs text-gray-400 pt-4 border-t">
-                 <p>&copy; {new Date().getFullYear()} CureCoders. Confidential report for internal use only.</p>
+                {/* Footer */}
+                <div className="mt-12 text-center text-xs text-gray-400 pt-4 border-t border-gray-300">
+                     <p>&copy; {new Date().getFullYear()} CureCoders. Confidential report for internal use only.</p>
+                     <p className="mt-1">Powered by Advanced AI Analytics</p>
+                </div>
             </div>
         </div>
     );
