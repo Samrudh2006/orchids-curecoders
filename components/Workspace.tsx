@@ -42,32 +42,73 @@ const Workspace = () => {
 
     const handleDownloadPdf = async () => {
         const reportElement = reportRef.current;
-        
+
         // @ts-ignore
         if (!reportElement || typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
             console.error("html2canvas or jspdf is not defined");
+            alert("PDF libraries not loaded. Please refresh the page and try again.");
             return;
         }
-        
+
         setIsDownloadingPdf(true);
+
+        const reportContainer = reportElement.parentElement;
+        if (reportContainer) {
+            reportContainer.style.visibility = 'visible';
+            reportContainer.style.position = 'absolute';
+            reportContainer.style.left = '0';
+            reportContainer.style.top = '0';
+            reportContainer.style.zIndex = '-1';
+        }
+
         try {
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             // @ts-ignore
-            const canvas = await html2canvas(reportElement, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            
+            const canvas = await html2canvas(reportElement, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: true,
+                width: reportElement.scrollWidth,
+                height: reportElement.scrollHeight
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+
             // @ts-ignore
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: 'p',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
-            });
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+            const imgWidth = 210;
+            const pageHeight = 297;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
             pdf.save(`CureCoders_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (e) {
              console.error("Error generating PDF:", e);
+             alert(`Failed to generate PDF: ${e.message || 'Unknown error'}`);
         } finally {
+            if (reportContainer) {
+                reportContainer.style.visibility = 'hidden';
+                reportContainer.style.position = 'fixed';
+                reportContainer.style.left = '-9999px';
+                reportContainer.style.zIndex = '';
+            }
             setIsDownloadingPdf(false);
         }
     };
@@ -338,7 +379,7 @@ const Workspace = () => {
                 )}
                 
                 {isReportReady && (
-                    <div className="absolute -left-[9999px] -top-[9999px]">
+                    <div style={{ position: 'fixed', left: '-9999px', top: 0, visibility: 'hidden' }}>
                         <div ref={reportRef}>
                             <Report prompt={currentRunPrompt} summary={summary} agents={agents} />
                         </div>
