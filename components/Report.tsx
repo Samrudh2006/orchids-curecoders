@@ -10,11 +10,12 @@ interface ReportProps {
 }
 
 const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
-    
-    const successfulAgents = agents.filter(a => 
-        a.status === AgentStatus.DONE && 
-        a.name !== AgentName.DECOMPOSITION && 
+
+    const successfulAgents = agents.filter(a =>
+        a.status === AgentStatus.DONE &&
+        a.name !== AgentName.DECOMPOSITION &&
         a.name !== AgentName.SYNTHESIS &&
+        a.name !== AgentName.REPORT_GENERATOR &&
         a.result
     );
 
@@ -55,32 +56,34 @@ const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
 
             {/* Prompt Section */}
             <div className="mt-8">
-                <h2 className="text-lg font-semibold font-display text-gray-800 border-b pb-2">Initial Query</h2>
+                <h2 className="text-lg font-semibold font-display text-gray-800 border-b border-gray-300 pb-2">Initial Query</h2>
                 <p className="mt-3 p-3 bg-gray-50 rounded-md text-sm text-gray-700 italic">"{prompt}"</p>
             </div>
-            
+
             {/* Summary Section */}
             <div className="mt-8">
-                <h2 className="text-lg font-semibold font-display text-gray-800 border-b pb-2">Executive Summary</h2>
+                <h2 className="text-lg font-semibold font-display text-gray-800 border-b border-gray-300 pb-2">Executive Summary</h2>
                 <div className="mt-3 prose prose-slate max-w-none">
                     <MarkdownRenderer content={summary} />
                 </div>
             </div>
             
             {/* Agent Details Section */}
-            <div className="mt-8">
-                <h2 className="text-lg font-semibold font-display text-gray-800 border-b pb-2">Detailed Agent Findings</h2>
-                <div className="space-y-6 mt-4">
-                    {successfulAgents.map(agent => (
-                        <div key={agent.id} className="p-4 border border-gray-200 rounded-lg break-inside-avoid">
-                             <h3 className="font-semibold text-base text-primary">{agent.name}</h3>
-                             <div className="mt-3">
-                                {agent.result && <ResultDisplay agentName={agent.name} result={agent.result} />}
-                             </div>
-                        </div>
-                    ))}
+            {successfulAgents.length > 0 && (
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold font-display text-gray-800 border-b border-gray-300 pb-2">Detailed Agent Findings</h2>
+                    <div className="space-y-6 mt-4">
+                        {successfulAgents.map(agent => (
+                            <div key={agent.id} className="p-4 border border-gray-300 rounded-lg break-inside-avoid bg-gray-50">
+                                 <h3 className="font-semibold text-base text-primary mb-3">{agent.name}</h3>
+                                 <div className="mt-3">
+                                    {agent.result && <ResultDisplay agentName={agent.name} result={agent.result} />}
+                                 </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
                 {/* Footer */}
                 <div className="mt-12 text-center text-xs text-gray-400 pt-4 border-t border-gray-300">

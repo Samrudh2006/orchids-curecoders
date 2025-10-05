@@ -106,14 +106,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
 
 
+            let finalSummary = '';
+
             if (successfulResults.length > 0) {
                 const synthesisAgent: Agent = { id: 'synth', name: AgentName.SYNTHESIS, status: AgentStatus.RUNNING, result: null };
                 setAgents(prev => [...prev, synthesisAgent]);
 
-                const finalSummary = await geminiService.synthesizeResults(successfulResults, currentPrompt);
+                finalSummary = await geminiService.synthesizeResults(successfulResults, currentPrompt);
                 setSummary(finalSummary);
                 setAgents(prev => prev.map(a => a.id === 'synth' ? {...a, status: AgentStatus.DONE} : a));
-                
+
                 geminiService.initializeChat(currentPrompt, successfulResults, finalSummary);
                 setChatHistory([{
                     sender: 'ai',
@@ -123,25 +125,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
                 const reportAgent: Agent = { id: 'report', name: AgentName.REPORT_GENERATOR, status: AgentStatus.DONE, result: null };
                 setAgents(prev => [...prev, reportAgent]);
-                
+
                 setIsReportReady(true);
+
+                const historyItem = {
+                    id: new Date().toISOString(),
+                    prompt: currentPrompt,
+                    summary: finalSummary,
+                    timestamp: new Date().toISOString(),
+                    agentCount: successfulResults.length
+                };
+
+                const detailedHistory = JSON.parse(localStorage.getItem('searchHistoryDetailed') || '[]');
+                const updatedDetailed = [historyItem, ...detailedHistory.filter((item: any) => item.prompt !== currentPrompt)];
+                localStorage.setItem('searchHistoryDetailed', JSON.stringify(updatedDetailed));
+
+                setSearchHistory(prev => [{ id: historyItem.id, prompt: currentPrompt }, ...prev.filter(item => item.prompt !== currentPrompt)].slice(0, 5));
             } else {
                 setError("All agents failed to produce results.");
             }
-
-            const historyItem = {
-                id: new Date().toISOString(),
-                prompt: currentPrompt,
-                summary: finalSummary,
-                timestamp: new Date().toISOString(),
-                agentCount: successfulResults.length
-            };
-
-            const detailedHistory = JSON.parse(localStorage.getItem('searchHistoryDetailed') || '[]');
-            const updatedDetailed = [historyItem, ...detailedHistory.filter((item: any) => item.prompt !== currentPrompt)];
-            localStorage.setItem('searchHistoryDetailed', JSON.stringify(updatedDetailed));
-
-            setSearchHistory(prev => [{ id: historyItem.id, prompt: currentPrompt }, ...prev.filter(item => item.prompt !== currentPrompt)].slice(0, 5));
 
         } catch (e) {
             const errorMsg = e instanceof Error ? e.message : 'An orchestration error occurred';
