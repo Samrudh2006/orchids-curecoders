@@ -1,0 +1,81 @@
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="400" cy="400" r="400" fill="url(#bgGradient)" />
+  
+  <!-- Circuit patterns -->
+  <g stroke="#06b6d4" stroke-width="2" fill="none">
+    <!-- Left side circuits (cyan) -->
+    <path d="M100 200 Q150 250 200 200 T300 250" />
+    <path d="M120 300 Q170 350 220 300 T320 350" />
+    <path d="M80 400 Q130 450 180 400 T280 450" />
+    <path d="M100 500 Q150 550 200 500 T300 550" />
+    <path d="M120 600 Q170 650 220 600 T320 650" />
+    <!-- Connection nodes -->
+    <circle cx="150" cy="225" r="4" fill="#06b6d4" />
+    <circle cx="250" cy="225" r="4" fill="#06b6d4" />
+    <circle cx="170" cy="325" r="4" fill="#06b6d4" />
+    <circle cx="270" cy="325" r="4" fill="#06b6d4" />
+    <circle cx="130" cy="425" r="4" fill="#06b6d4" />
+    <circle cx="230" cy="425" r="4" fill="#06b6d4" />
+  </g>
+  
+  <g stroke="#f59e0b" stroke-width="2" fill="none">
+    <!-- Right side circuits (orange) -->
+    <path d="M500 200 Q550 250 600 200 T700 250" />
+    <path d="M480 300 Q530 350 580 300 T680 350" />
+    <path d="M520 400 Q570 450 620 400 T720 450" />
+    <path d="M500 500 Q550 550 600 500 T700 550" />
+    <path d="M480 600 Q530 650 580 600 T680 650" />
+    <!-- Connection nodes -->
+    <circle cx="550" cy="225" r="4" fill="#f59e0b" />
+    <circle cx="650" cy="225" r="4" fill="#f59e0b" />
+    <circle cx="530" cy="325" r="4" fill="#f59e0b" />
+    <circle cx="630" cy="325" r="4" fill="#f59e0b" />
+    <circle cx="570" cy="425" r="4" fill="#f59e0b" />
+    <circle cx="670" cy="425" r="4" fill="#f59e0b" />
+  </g>
+  
+  <!-- Main Shield -->
+  <path d="M400 150 C350 150 300 180 300 220 L300 480 C300 520 350 600 400 650 C450 600 500 520 500 480 L500 220 C500 180 450 150 400 150 Z" 
+        fill="none" stroke="url(#shieldGradient)" stroke-width="4" />
+  
+  <!-- Medical cross with code brackets -->
+  <g fill="#ffffff">
+    <!-- Code brackets -->
+    <path d="M320 280 L310 290 L320 300 L325 295 L318 290 L325 285 Z" />
+    <path d="M480 280 L475 285 L482 290 L475 295 L480 300 L490 290 Z" />
+    
+    <!-- Medical cross -->
+    <rect x="385" y="270" width="30" height="80" rx="3" />
+    <rect x="365" y="290" width="70" height="30" rx="3" />
+  </g>
+  
+  <!-- Brain hemispheres -->
+  <g fill="none" stroke="#06b6d4" stroke-width="2">
+    <!-- Left brain (structured/logical) -->
+    <path d="M350 480 Q330 460 330 490 Q330 520 350 500 Q370 480 350 480" />
+    <path d="M335 485 L355 485 M340 492 L350 492 M335 499 L360 499" />
+  </g>
+  
+  <g fill="none" stroke="#f59e0b" stroke-width="2">
+    <!-- Right brain (creative/intuitive) -->
+    <path d="M450 480 Q470 460 470 490 Q470 520 450 500 Q430 480 450 480" />
+    <path d="M445 485 Q455 480 465 485 Q455 490 445 495 Q455 500 465 495" />
+  </g>
+  
+  <!-- Company Name -->
+  <text x="400" y="420" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="42" font-weight="bold">
+    CURECODERS
+  </text>
+</svg>

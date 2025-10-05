@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { History as HistoryIcon, Trash2, ExternalLink, Calendar } from '../components/Icons';
+import { History as HistoryIcon, Trash2, ExternalLink, Calendar, Search, Filter } from '../components/Icons';
 
 const History = () => {
   const navigate = useNavigate();
   const { searchHistory, runMasterAgent } = useAppContext();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleReplay = (prompt: string) => {
     runMasterAgent(prompt);
@@ -36,6 +39,39 @@ const History = () => {
     return stored ? JSON.parse(stored) : [];
   };
 
+  // Advanced filtering and search
+  const filteredHistory = useMemo(() => {
+    let history = getDetailedHistory();
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      history = history.filter((item: any) => 
+        item.prompt.toLowerCase().includes(query) ||
+        (item.summary && item.summary.toLowerCase().includes(query))
+      );
+    }
+    
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      history = history.filter((item: any) => {
+        const itemDate = new Date(item.timestamp);
+        const diffDays = Math.floor((now.getTime() - itemDate.getTime()) / 86400000);
+        
+        switch (dateFilter) {
+          case 'today': return diffDays === 0;
+          case 'week': return diffDays <= 7;
+          case 'month': return diffDays <= 30;
+          case 'quarter': return diffDays <= 90;
+          default: return true;
+        }
+      });
+    }
+    
+    return history;
+  }, [searchQuery, dateFilter]);
+
   const detailedHistory = getDetailedHistory();
 
   const formatDate = (dateString: string) => {
@@ -57,21 +93,89 @@ const History = () => {
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              ← Back to Home
+            </button>
             <HistoryIcon className="w-8 h-8 text-primary" />
             <h1 className="font-display text-3xl font-bold text-slate-800 dark:text-slate-100">
               Search History
             </h1>
           </div>
           {detailedHistory.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear All
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear All
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Advanced Search & Filters */}
+        {detailedHistory.length > 0 && (
+          <div className={`transition-all duration-300 overflow-hidden ${showFilters ? 'max-h-96 mb-8' : 'max-h-0'}`}>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Search Input */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Search in queries and summaries
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by keywords, molecules, companies..."
+                      className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Date Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Time Period
+                  </label>
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">Last 3 Months</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Results Count */}
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Showing {filteredHistory.length} of {detailedHistory.length} results
+                  {searchQuery && ` for "${searchQuery}"`}
+                  {dateFilter !== 'all' && ` in ${dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'this week' : dateFilter === 'month' ? 'this month' : 'last 3 months'}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {detailedHistory.length === 0 ? (
           <div className="text-center py-16">
@@ -89,9 +193,28 @@ const History = () => {
               Go to Home
             </button>
           </div>
+        ) : filteredHistory.length === 0 ? (
+          <div className="text-center py-16">
+            <Search className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+              No results found
+            </h3>
+            <p className="text-slate-500 dark:text-slate-500 mb-6">
+              Try adjusting your search terms or filters
+            </p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setDateFilter('all');
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 font-semibold text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
-            {detailedHistory.map((item: any) => (
+            {filteredHistory.map((item: any) => (
               <div
                 key={item.id}
                 className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-all hover:shadow-md"

@@ -3,15 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sun, Moon, Search, History } from './Icons';
 import { Logo } from '../assets/logo';
 import { useAppContext } from '../hooks/useAppContext';
+import { useTheme } from '../context/ThemeContext';
 
-interface HeaderProps {
-  theme: string;
-  toggleTheme: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
+const Header: React.FC = () => {
   const [searchPrompt, setSearchPrompt] = useState('');
   const { runMasterAgent, isOrchestrating } = useAppContext();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -64,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
             className="p-2 rounded-full text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            {isDark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
           </button>
         </div>
       </div>
