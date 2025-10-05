@@ -4,11 +4,13 @@ import { Sun, Moon, Search, History } from './Icons';
 import { Logo } from '../assets/logo';
 import { useAppContext } from '../hooks/useAppContext';
 import { useTheme } from '../context/ThemeContext';
+import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 
 const Header: React.FC = () => {
   const [searchPrompt, setSearchPrompt] = useState('');
   const { runMasterAgent, isOrchestrating } = useAppContext();
   const { isDark, toggleTheme } = useTheme();
+  const { explainFeature } = useVoiceFeatures();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,6 +49,7 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-2">
           <Link
             to="/history"
+            onMouseEnter={() => explainFeature('history')}
             className={`p-2 rounded-lg transition-colors ${
               location.pathname === '/history'
                 ? 'bg-primary/10 text-primary'
@@ -57,7 +60,11 @@ const Header: React.FC = () => {
             <History className="w-6 h-6" />
           </Link>
           <button
-            onClick={toggleTheme}
+            onClick={() => {
+              toggleTheme();
+              explainFeature('theme-toggle');
+            }}
+            onMouseEnter={() => explainFeature('theme-toggle')}
             className="p-2 rounded-full text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
             aria-label="Toggle theme"
           >

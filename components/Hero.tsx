@@ -1,4 +1,5 @@
 import React from 'react';
+import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 
 interface HeroProps {
     onTryDemo: () => void;
@@ -20,6 +21,13 @@ const MoleculeParticles = () => (
 
 
 const Hero: React.FC<HeroProps> = ({ onTryDemo }) => {
+  const { explainFeature } = useVoiceFeatures();
+
+  const handleDemoClick = () => {
+    explainFeature('demo-suggestion');
+    onTryDemo();
+  };
+
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-cyan-900">
       {/* Background Image */}
@@ -73,8 +81,9 @@ const Hero: React.FC<HeroProps> = ({ onTryDemo }) => {
           {/* CTA Button */}
           <div className="mt-12 animate-slide-up" style={{animationDelay: '0.4s'}}>
             <button
-              onClick={onTryDemo}
+              onClick={handleDemoClick}
               className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl shadow-2xl shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+              onMouseEnter={() => explainFeature('workspace')}
             >
               <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               <span className="relative flex items-center space-x-2">

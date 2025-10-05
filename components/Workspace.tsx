@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AgentName, AgentStatus } from '../types';
 import { QUICK_PROMPTS } from '../constants';
 import AgentCard from './AgentCard';
@@ -6,6 +6,7 @@ import Dashboard from './Dashboard';
 import Report from './Report';
 import { Sparkles, UploadCloud, X, History as HistoryIcon, ChevronDown, FileText } from './Icons';
 import { useAppContext } from '../hooks/useAppContext';
+import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 import DocumentManager from './DocumentManager';
 import DragDropUpload from './DragDropUpload';
 
@@ -22,6 +23,14 @@ const Workspace = () => {
         runMasterAgent,
         searchHistory,
     } = useAppContext();
+    
+    const {
+        explainFeature,
+        speakAgentStatus,
+        speakDataInsight,
+        speakSectionWelcome,
+        isVoiceEnabled
+    } = useVoiceFeatures();
 
     const [prompt, setPrompt] = useState('');
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -31,6 +40,34 @@ const Workspace = () => {
     const [showDocumentManager, setShowDocumentManager] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const reportRef = useRef<HTMLDivElement>(null);
+    
+    // Voice assistant effects
+    useEffect(() => {
+        if (isVoiceEnabled) {
+            speakSectionWelcome('workspace');
+        }
+    }, []); // Only run on mount
+    
+    useEffect(() => {
+        if (isOrchestrating && isVoiceEnabled) {
+            explainFeature('agents-working');
+        }
+    }, [isOrchestrating]);
+    
+    useEffect(() => {
+        if (isReportReady && summary && isVoiceEnabled) {
+            explainFeature('synthesis-complete');
+        }
+    }, [isReportReady, summary]);
+    
+    // Monitor agent status changes
+    useEffect(() => {
+        agents.forEach(agent => {
+            if (agent.status === AgentStatus.DONE && agent.result && isVoiceEnabled) {
+                speakAgentStatus(agent.name, 'done', agent.result);
+            }
+        });
+    }, [agents]);
     
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {

@@ -1,15 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
+import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 import { History as HistoryIcon, Trash2, ExternalLink, Calendar, Search, Filter } from '../components/Icons';
 
 const History = () => {
   const navigate = useNavigate();
   const { searchHistory, runMasterAgent } = useAppContext();
+  const { speakSectionWelcome, explainFeature, isVoiceEnabled } = useVoiceFeatures();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    if (isVoiceEnabled) {
+      speakSectionWelcome('history');
+    }
+  }, []);
 
   const handleReplay = (prompt: string) => {
     runMasterAgent(prompt);
