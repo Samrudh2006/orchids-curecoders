@@ -7,11 +7,13 @@ const VoiceAssistantUI: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    // Show welcome notification when first visiting
-    const hasSeenWelcome = localStorage.getItem('curecoders_voice_welcome_shown');
-    if (!hasSeenWelcome) {
-      setShowWelcome(true);
-      localStorage.setItem('curecoders_voice_welcome_shown', 'true');
+    // Show welcome notification when first visiting (client-side only)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const hasSeenWelcome = localStorage.getItem('curecoders_voice_welcome_shown');
+      if (!hasSeenWelcome) {
+        setShowWelcome(true);
+        localStorage.setItem('curecoders_voice_welcome_shown', 'true');
+      }
     }
   }, []);
 

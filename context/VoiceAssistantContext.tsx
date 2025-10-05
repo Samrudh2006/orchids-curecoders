@@ -35,11 +35,15 @@ interface VoiceAssistantProviderProps {
 
 export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ children }) => {
   const [isEnabled, setIsEnabled] = useState(() => {
-    const saved = localStorage.getItem('curecoders_voice_enabled');
-    return saved ? JSON.parse(saved) : false; // Default to disabled for user choice
+    // Safe client-side initialization for Vercel
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem('curecoders_voice_enabled');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false; // Default to disabled for SSR
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [synth] = useState(() => window.speechSynthesis);
+  const [synth] = useState(() => typeof window !== 'undefined' ? window.speechSynthesis : null);
 
   useEffect(() => {
     localStorage.setItem('curecoders_voice_enabled', JSON.stringify(isEnabled));
