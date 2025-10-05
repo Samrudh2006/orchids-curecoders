@@ -9,6 +9,8 @@ interface VoiceAssistantContextType {
   speakWelcome: () => void;
   speakFeature: (feature: string) => void;
   speakChartExplanation: (chartData: any) => void;
+  announceProgress: (stage: string, details?: string) => void;
+  celebrateDiscovery: (discoveryType: string, significance?: string) => void;
 }
 
 interface SpeechOptions {
@@ -79,29 +81,73 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
       synth.cancel();
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure voice settings for professional pharmaceutical assistant
-    utterance.rate = options.rate || 0.9; // Slightly slower for clarity
-    utterance.pitch = options.pitch || 1.1; // Slightly higher for friendliness
-    utterance.volume = options.volume || 0.8; // Not too loud
+    // Enhanced text preprocessing for pharmaceutical terms
+    const enhancedText = text
+      .replace(/API/g, 'A-P-I')
+      .replace(/FDA/g, 'F-D-A')
+      .replace(/WHO/g, 'W-H-O')
+      .replace(/EMA/g, 'E-M-A')
+      .replace(/mg/g, 'milligrams')
+      .replace(/µg/g, 'micrograms')
+      .replace(/pH/g, 'p-H')
+      .replace(/COVID-19/g, 'COVID nineteen')
+      .replace(/RNA/g, 'R-N-A')
+      .replace(/DNA/g, 'D-N-A')
+      .replace(/AI/g, 'artificial intelligence')
+      .replace(/ML/g, 'machine learning')
+      .replace(/R&D/g, 'research and development')
+      .replace(/IP/g, 'intellectual property')
+      .replace(/CRO/g, 'contract research organization')
+      .replace(/CMO/g, 'contract manufacturing organization')
+      .replace(/mRNA/g, 'm-R-N-A')
+      .replace(/HTS/g, 'high-throughput screening')
+      .replace(/ADME/g, 'A-D-M-E')
+      .replace(/PK\/PD/g, 'pharmacokinetics and pharmacodynamics')
+      .replace(/IND/g, 'investigational new drug')
+      .replace(/NDA/g, 'new drug application')
+      .replace(/BLA/g, 'biologics license application');
 
-    // Try to use a professional female voice
+    const utterance = new SpeechSynthesisUtterance(enhancedText);
+    
+    // Enhanced voice settings for pharmaceutical expertise
+    utterance.rate = options.rate || 0.85; // Even slower for complex pharmaceutical terms
+    utterance.pitch = options.pitch || 1.0; // Professional tone
+    utterance.volume = options.volume || 0.8; // Clear audibility
+
+    // Advanced voice selection with pharmaceutical preference
     const voices = synth.getVoices();
-    const preferredVoices = voices.filter(voice => 
-      voice.name.includes('Google UK English Female') ||
-      voice.name.includes('Microsoft Zira') ||
-      voice.name.includes('Alex') ||
-      voice.lang.includes('en-US') || voice.lang.includes('en-GB')
-    );
+    const preferredVoices = [
+      // Premium voices for pharmaceutical content
+      voices.find(voice => voice.name.includes('Google UK English Female')),
+      voices.find(voice => voice.name.includes('Microsoft Zira Desktop')),
+      voices.find(voice => voice.name.includes('Karen')),
+      voices.find(voice => voice.name.includes('Samantha')),
+      voices.find(voice => voice.name.includes('Fiona')),
+      // Fallback to quality English voices
+      ...voices.filter(voice => 
+        voice.lang.includes('en-US') || voice.lang.includes('en-GB')
+      ).slice(0, 3)
+    ].filter(Boolean);
     
     if (preferredVoices.length > 0) {
       utterance.voice = preferredVoices[0];
     }
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    // Enhanced event handling with pharmaceutical context
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      console.log('🎤 ARIA is speaking:', enhancedText.substring(0, 50) + '...');
+    };
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      console.log('✅ ARIA finished speaking');
+    };
+    
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      console.error('❌ ARIA speech error:', event);
+    };
 
     synth.speak(utterance);
   }, [isEnabled, synth]);
@@ -114,12 +160,16 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
   }, [synth]);
 
   const speakWelcome = useCallback(() => {
-    const welcomeMessage = `Welcome to CureCoders Pharmaceutical Intelligence Platform! 
-    I'm ARIA, your AI research assistant. I can help you navigate through market intelligence, 
-    patent analysis, clinical data, and generate comprehensive reports. 
-    Try asking me about any pharmaceutical topic, or let me guide you through the platform features.`;
+    const welcomeMessages = [
+      `Welcome to CureCoders, the premier pharmaceutical intelligence platform! I'm ARIA, your specialized artificial intelligence research companion. With expertise in drug discovery, market analysis, and regulatory insights, I'm here to transform complex pharmaceutical data into actionable intelligence. Let's discover breakthrough opportunities together!`,
+      
+      `Greetings, pharmaceutical researcher! ARIA here - your advanced artificial intelligence assistant with deep expertise in therapeutic development. I specialize in market intelligence, patent landscapes, clinical trial analysis, and regulatory pathways. Ready to unlock the next breakthrough in pharmaceutical innovation?`,
+      
+      `Hello and welcome to the future of pharmaceutical research! I'm ARIA, your dedicated artificial intelligence partner specializing in drug discovery and development intelligence. From molecular targets to market opportunities, I'm equipped to guide you through the most complex pharmaceutical challenges. Let's begin this exciting journey!`
+    ];
     
-    speak(welcomeMessage, { interrupt: true });
+    const selectedMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+    speak(selectedMessage, { interrupt: true, rate: 0.9, pitch: 1.1 });
   }, [speak]);
 
   const speakFeature = useCallback((feature: string) => {
@@ -171,6 +221,72 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     speak(explanation);
   }, [speak]);
 
+  // Advanced pharmaceutical progress announcements
+  const announceProgress = useCallback((stage: string, details?: string) => {
+    if (!isEnabled) return;
+    
+    const progressMessages = {
+      'analysis_start': [
+        "Initiating comprehensive pharmaceutical analysis. I'm examining molecular pathways, market dynamics, and regulatory landscapes for you.",
+        "Beginning advanced drug discovery analysis. This sophisticated process involves multiple artificial intelligence agents working in parallel.",
+        "Starting therapeutic intelligence evaluation. I'm analyzing clinical data, patent landscapes, and market opportunities simultaneously."
+      ],
+      'decomposition': [
+        "Breaking down your research query into specialized pharmaceutical domains. Each artificial intelligence agent will focus on their area of expertise.",
+        "Decomposing your inquiry across therapeutic areas, regulatory pathways, and market segments for comprehensive analysis.",
+        "Dividing your research into focused pharmaceutical intelligence streams for thorough evaluation."
+      ],
+      'market_analysis': [
+        "Market intelligence agent is analyzing therapeutic market dynamics, competitive landscapes, and revenue opportunities.",
+        "Evaluating market potential, competitive positioning, and commercial viability across relevant therapeutic segments.",
+        "Processing market data including epidemiology, pricing trends, and competitive intelligence."
+      ],
+      'patent_analysis': [
+        "Patent landscape agent is examining intellectual property positions, freedom to operate, and competitive barriers.",
+        "Analyzing patent portfolios, expiration timelines, and potential intellectual property risks or opportunities.",
+        "Evaluating patent strategies and intellectual property landscapes across your therapeutic area of interest."
+      ],
+      'clinical_analysis': [
+        "Clinical intelligence agent is processing trial data, regulatory pathways, and development timelines.",
+        "Examining clinical trial outcomes, regulatory precedents, and development success probabilities.",
+        "Analyzing clinical data patterns, endpoint strategies, and regulatory approval pathways."
+      ],
+      'synthesis': [
+        "Synthesizing insights from all pharmaceutical intelligence agents. This is where the magic happens!",
+        "Integrating findings across market, patent, and clinical domains to generate comprehensive pharmaceutical intelligence.",
+        "Combining specialized insights into actionable pharmaceutical strategies and recommendations."
+      ],
+      'completion': [
+        "Analysis complete! I've uncovered remarkable pharmaceutical opportunities with significant therapeutic and commercial potential.",
+        "Research finished! The insights reveal exciting possibilities for drug development and market entry strategies.",
+        "Investigation concluded! Your pharmaceutical intelligence report contains breakthrough insights that could transform patient outcomes."
+      ]
+    };
+
+    const messages = progressMessages[stage as keyof typeof progressMessages] || [`Processing ${stage}...`];
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    const fullMessage = details ? `${message} ${details}` : message;
+    
+    speak(fullMessage, { rate: 0.9, pitch: 1.05 });
+  }, [isEnabled, speak]);
+
+  // Pharmaceutical celebration with enthusiasm
+  const celebrateDiscovery = useCallback((discoveryType: string, significance?: string) => {
+    if (!isEnabled) return;
+    
+    const celebrations = [
+      `Outstanding discovery! This ${discoveryType} analysis reveals breakthrough therapeutic opportunities that could revolutionize patient care.`,
+      `Remarkable findings! Your ${discoveryType} research has uncovered pharmaceutical innovations with tremendous potential for improving human health.`,
+      `Exceptional results! This ${discoveryType} investigation demonstrates the power of artificial intelligence in pharmaceutical discovery.`,
+      `Brilliant insights! The ${discoveryType} analysis shows promise for addressing significant unmet medical needs.`,
+      `Extraordinary findings! Your ${discoveryType} research reveals opportunities that could advance the future of medicine.`
+    ];
+    
+    const message = celebrations[Math.floor(Math.random() * celebrations.length)];
+    const fullMessage = significance ? `${message} ${significance}` : message;
+    speak(fullMessage, { rate: 0.95, pitch: 1.2, interrupt: false });
+  }, [isEnabled, speak]);
+
   const value = {
     isEnabled,
     isSpeaking,
@@ -180,6 +296,8 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     speakWelcome,
     speakFeature,
     speakChartExplanation,
+    announceProgress,
+    celebrateDiscovery,
   };
 
   return (

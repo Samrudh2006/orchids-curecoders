@@ -29,8 +29,6 @@ const VOICE_EXPLANATIONS = {
   
   'export-powerpoint': "PowerPoint export creates presentation-ready slides with your pharmaceutical research findings, charts, and key insights. Ready for stakeholder meetings.",
   
-  'export-bookmarks': "Export Bookmarks lets you save your favorite research results and download them for future reference or sharing. Use this to keep track of key findings and insights across your projects.",
-  
   'search-history': "Search through your research history using keywords, dates, or agent types. Quickly find and replay previous analyses or build upon existing insights.",
   
   'document-manager': "The Document Manager helps you organize, preview, and reuse uploaded files. All your documents are stored securely and remain accessible for future analyses.",

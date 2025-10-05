@@ -1,6 +1,7 @@
 import React, { createContext, useState, useCallback, ReactNode } from 'react';
 import { Agent, AgentName, AgentStatus, AgentResultData, AgentError, ChatMessage } from '../types';
 import * as geminiService from '../services/geminiService';
+import { useVoiceAssistant } from './VoiceAssistantContext';
 
 interface SearchHistoryItem {
     id: string;
