@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 
 interface HeroProps {
@@ -97,6 +98,33 @@ const Hero: React.FC<HeroProps> = ({ onTryDemo }) => {
             <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
               No signup required • Instant access • Professional results
             </p>
+          </div>
+          
+          {/* Documentation Quick Links */}
+          <div className="mt-16 pt-12 border-t border-slate-200/50 dark:border-slate-700/50 animate-slide-up" style={{animationDelay: '0.6s'}}>
+            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">
+              Explore Our Platform
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 max-w-5xl mx-auto">
+              {[
+                { to: '/architecture', icon: '🏗️', label: 'Architecture', desc: '7 AI Agents' },
+                { to: '/samples', icon: '📊', label: 'Sample Outputs', desc: 'Live Demos' },
+                { to: '/apis', icon: '🔌', label: 'Mock APIs', desc: 'Data Sources' },
+                { to: '/queries', icon: '🔍', label: 'Queries', desc: '10+ Examples' },
+                { to: '/journey', icon: '🚀', label: 'Product Journey', desc: '5-Slide PPT' },
+                { to: '/reports', icon: '📄', label: 'Reports', desc: 'PDF & Excel' },
+              ].map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="group flex flex-col items-center p-4 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-700/50 hover:border-primary hover:shadow-lg transition-all"
+                >
+                  <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">{item.icon}</span>
+                  <span className="font-semibold text-slate-800 dark:text-white text-sm">{item.label}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{item.desc}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

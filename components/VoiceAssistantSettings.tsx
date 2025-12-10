@@ -78,7 +78,7 @@ const VoiceAssistantSettings: React.FC = () => {
   // Welcome notification
   if (showWelcome) {
     return (
-      <div className="fixed bottom-20 right-4 z-50 max-w-sm animate-slide-in-right">
+      <div className="fixed bottom-24 right-6 z-[60] max-w-sm animate-slide-in-right">
         <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-4 rounded-xl shadow-2xl border border-cyan-300">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
@@ -87,7 +87,7 @@ const VoiceAssistantSettings: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-lg">Meet ARIA 🎤</h4>
+              <h4 className="font-semibold text-lg">Meet ARIA</h4>
               <p className="text-cyan-100 text-sm mt-1">
                 Your pharmaceutical research assistant is ready to help! Enable voice guidance based on your interests.
               </p>
@@ -121,7 +121,7 @@ const VoiceAssistantSettings: React.FC = () => {
   // Settings panel
   if (showSettings) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-6 right-6 z-[60]">
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-4 w-80 max-h-96 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-800 dark:text-white">Voice Assistant Preferences</h3>
@@ -225,33 +225,33 @@ const VoiceAssistantSettings: React.FC = () => {
 
   // Main voice assistant button
   return (
-    <div className="fixed bottom-4 right-4 z-40">
-      <div className="flex items-center space-x-2">
+    <div className="fixed bottom-6 right-6 z-[60]">
+      <div className="flex items-center gap-3 p-2 bg-slate-800/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-full shadow-2xl border border-slate-700">
         {/* Settings button */}
         <button
           onClick={() => setShowSettings(true)}
-          className="p-3 bg-slate-600 hover:bg-slate-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+          className="p-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-full transition-all duration-200 hover:scale-105"
           title="Voice Assistant Settings"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-5 h-5" />
         </button>
 
         {/* Main voice button */}
         <button
           onClick={toggleVoice}
-          className={`p-4 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
+          className={`p-3 rounded-full transition-all duration-200 hover:scale-105 ${
             isEnabled
               ? isSpeaking
                 ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white animate-pulse'
                 : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700'
-              : 'bg-slate-300 hover:bg-slate-400 text-slate-600'
+              : 'bg-slate-600 hover:bg-slate-500 text-slate-300'
           }`}
-          title={isEnabled ? (isSpeaking ? 'ARIA is speaking...' : 'ARIA is ready') : 'Enable voice assistant'}
+          title={isEnabled ? (isSpeaking ? 'ARIA is speaking...' : 'ARIA is ready - Click to disable') : 'Enable voice assistant'}
         >
           {isEnabled ? (
             isSpeaking ? (
               <div className="flex items-center">
-                <Mic className="w-6 h-6" />
+                <Mic className="w-5 h-5" />
                 <div className="ml-1 flex space-x-0.5">
                   <div className="w-1 h-3 bg-white rounded-full animate-bounce"></div>
                   <div className="w-1 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -259,18 +259,18 @@ const VoiceAssistantSettings: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <Mic className="w-6 h-6" />
+              <Mic className="w-5 h-5" />
             )
           ) : (
-            <MicOff className="w-6 h-6" />
+            <MicOff className="w-5 h-5" />
           )}
         </button>
       </div>
       
       {/* Status indicator */}
       {isEnabled && (
-        <div className="absolute -top-2 -right-2">
-          <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+        <div className="absolute -top-1 -right-1">
+          <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-slate-800 animate-pulse"></div>
         </div>
       )}
     </div>

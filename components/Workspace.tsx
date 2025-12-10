@@ -33,7 +33,7 @@ const Workspace = () => {
         isVoiceEnabled
     } = useVoiceFeatures();
 
-    const [prompt, setPrompt] = useState('');
+    const [prompt, setPrompt] = useState(''); 
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
     const [isExportingExcel, setIsExportingExcel] = useState(false);
     const [isExportingPpt, setIsExportingPpt] = useState(false);
@@ -998,7 +998,6 @@ const Workspace = () => {
         }
     };
 
-
     return (
         <div id="workspace" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 scroll-mt-16">
             <div className="max-w-4xl mx-auto">
@@ -1031,11 +1030,6 @@ const Workspace = () => {
                                 <Sparkles className="w-5 h-5" />
                                 {isOrchestrating ? 'Running...' : 'Run Agents'}
                                 </button>
-                            </div>
-                            
-                            {/* AI Chatbot - Above Upload Area */}
-                            <div className="mt-8">
-                                <AIChatbot />
                             </div>
                             
                             <div className="mt-6">
@@ -1091,6 +1085,10 @@ const Workspace = () => {
                                         </button>
                                     </div>
                                 )}
+                                
+                                <div className="mt-8">
+                                    <AIChatbot />
+                                </div>
                             </div>
                         </>
                     )}

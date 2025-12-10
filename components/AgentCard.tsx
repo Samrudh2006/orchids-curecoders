@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Agent, AgentStatus, AgentName, AgentResultData } from '../types';
 import { CheckCircle, Clock, XCircle, Zap, BrainCircuit, Microscope, BarChart, FileText, Globe, Ship, AlertTriangle, Download, Calendar, Filter, Info, ChevronUp, ChevronDown } from './Icons';
-import { Spinner } from './Spinner';
+import { Skeleton } from './Skeleton';
 
 interface AgentCardProps {
     agent: Agent;
@@ -12,7 +12,11 @@ const getStatusIcon = (status: AgentStatus) => {
         case AgentStatus.QUEUED:
             return <Clock className="w-5 h-5 text-slate-500" />;
         case AgentStatus.RUNNING:
-            return <Spinner className="w-5 h-5 text-primary" />;
+            return (
+                <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                </div>
+            );
         case AgentStatus.DONE:
             return <CheckCircle className="w-5 h-5 text-secondary" />;
         case AgentStatus.FAILED:
@@ -157,7 +161,7 @@ export const PatentTimeline: React.FC<{ patents: { expiryDate: string, title: st
                     const patentYear = new Date(patent.expiryDate).getFullYear();
                     const position = yearRange > 0 ? ((patentYear - firstYear) / yearRange) * 100 : 50;
                     return (
-                        <Tooltip key={index} text={`${patent.title} - ${patentYear}`}>
+                        <Tooltip key={index} text={`${patent.title} - ${patentYear}`} >
                             <div className="absolute w-4 h-4 bg-primary rounded-full -ml-2 transform -translate-x-1/2" style={{ top: `${position}%` }}>
                                  <div className="absolute left-full ml-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{patentYear}</div>
                             </div>
