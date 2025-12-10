@@ -10,7 +10,6 @@ import { useAppContext } from '../hooks/useAppContext';
 import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 import DocumentManager from './DocumentManager';
 import DragDropUpload from './DragDropUpload';
-import AIChatbot from './AIChatbot';
 
 const Workspace = () => {
     const { 
@@ -1033,11 +1032,6 @@ const Workspace = () => {
                                 </button>
                             </div>
                             
-                            {/* ARIA Voice Assistant above image upload */}
-                            <div className="mt-6 flex justify-end">
-                                <ARIAFloatingPanel />
-                            </div>
-                            
                             <div className="mt-6">
                                 <DragDropUpload
                                     onFileUpload={async (file) => {
@@ -1092,9 +1086,8 @@ const Workspace = () => {
                                     </div>
                                 )}
                                 
-                                {/* AI Chat Assistant below Show All Queries */}
-                                <div className="mt-8">
-                                    <AIChatbot />
+                                <div className="mt-8 flex justify-start">
+                                    <ARIAFloatingPanel />
                                 </div>
                             </div>
                         </>
