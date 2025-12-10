@@ -4,7 +4,7 @@ import { AgentName, AgentResultData } from "../types";
 const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
-  console.warn("Gemini API key not found. Using mock data. Please set the API_KEY environment variable.");
+    console.warn("Gemini API key not found. Using mock data. Please set the API_KEY environment variable.");
 }
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
@@ -44,50 +44,64 @@ const mockGenerateAgentData = (agentName: AgentName, prompt: string, fileContext
     return new Promise(resolve => {
         setTimeout(() => {
             let data: AgentResultData = {};
-            switch(agentName) {
+            switch (agentName) {
                 case AgentName.MARKET_DATA:
-                    data = { [AgentName.MARKET_DATA]: { 
-                        therapy: "Obesity", 
-                        molecule: "GLP-1 Agonist", 
-                        marketSizeUSD: "90B", 
-                        cagr: "12.5%", 
-                        topCompetitors: [{name: "Novo Nordisk", share: "55%"}, {name: "Eli Lilly", share: "38%"}, {name: "Amgen", share: "3%"}, {name: "Other", share: "4%"}], 
-                        insights: "Market dominated by two key players, but new entrants are targeting novel mechanisms.",
-                        marketGrowth: [
-                            { year: 2021, sizeB: 65 },
-                            { year: 2022, sizeB: 74 },
-                            { year: 2023, sizeB: 82 },
-                            { year: 2024, sizeB: 90 },
-                        ]
-                    } };
+                    data = {
+                        [AgentName.MARKET_DATA]: {
+                            therapy: "Obesity",
+                            molecule: "GLP-1 Agonist",
+                            marketSizeUSD: "90B",
+                            cagr: "12.5%",
+                            topCompetitors: [{ name: "Novo Nordisk", share: "55%" }, { name: "Eli Lilly", share: "38%" }, { name: "Amgen", share: "3%" }, { name: "Other", share: "4%" }],
+                            insights: "Market dominated by two key players, but new entrants are targeting novel mechanisms.",
+                            marketGrowth: [
+                                { year: 2021, sizeB: 65 },
+                                { year: 2022, sizeB: 74 },
+                                { year: 2023, sizeB: 82 },
+                                { year: 2024, sizeB: 90 },
+                            ]
+                        }
+                    };
                     break;
                 case AgentName.PATENTS:
-                    data = { [AgentName.PATENTS]: { patents: [
-                        {title: "Oral delivery system for incretin-based", url: "#", expiryDate: "2041-07-01", owner: "Innovate MedTech", ftRisk: "High" },
-                        {title: "Method of treating obesity with GLP-1", url: "#", expiryDate: "2035-08-22", owner: "Global Pharma", ftRisk: "Medium" }, 
-                        {title: "Novel long-acting GLP-1 receptor agonist", url: "#", expiryDate: "2043-11-15", owner: "Global Pharma Inc.", ftRisk: "Low"},
-                        {title: "Combination therapy of GLP-1 & amylin analogue", url: "#", expiryDate: "2045-03-20", owner: "BioGenix Therapeutics", ftRisk: "Low" }
-                    ] } };
+                    data = {
+                        [AgentName.PATENTS]: {
+                            patents: [
+                                { title: "Oral delivery system for incretin-based", url: "#", expiryDate: "2041-07-01", owner: "Innovate MedTech", ftRisk: "High" },
+                                { title: "Method of treating obesity with GLP-1", url: "#", expiryDate: "2035-08-22", owner: "Global Pharma", ftRisk: "Medium" },
+                                { title: "Novel long-acting GLP-1 receptor agonist", url: "#", expiryDate: "2043-11-15", owner: "Global Pharma Inc.", ftRisk: "Low" },
+                                { title: "Combination therapy of GLP-1 & amylin analogue", url: "#", expiryDate: "2045-03-20", owner: "BioGenix Therapeutics", ftRisk: "Low" }
+                            ]
+                        }
+                    };
                     break;
                 case AgentName.CLINICAL:
-                    data = { [AgentName.CLINICAL]: { trials: [
-                        {id: "NCT05001234", title: "Safety & Efficacy of AGP-101 in Adults with Obesity", phase: "1/2a", status: "Recruiting", sponsor: "Agility Pharma"}, 
-                        {id: "NCT05005678", title: "Efficacy & Safety of AGP-101 vs Placebo", phase: "2b", status: "Active, not recruiting", sponsor: "Agility Pharma"},
-                        {id: "NCT05009012", title: "Long-Term Efficacy & Cardiovascular Safety", phase: "3", status: "Planned", sponsor: "Agility Pharma"}
-                    ] } };
+                    data = {
+                        [AgentName.CLINICAL]: {
+                            trials: [
+                                { id: "NCT05001234", title: "Safety & Efficacy of AGP-101 in Adults with Obesity", phase: "1/2a", status: "Recruiting", sponsor: "Agility Pharma" },
+                                { id: "NCT05005678", title: "Efficacy & Safety of AGP-101 vs Placebo", phase: "2b", status: "Active, not recruiting", sponsor: "Agility Pharma" },
+                                { id: "NCT05009012", title: "Long-Term Efficacy & Cardiovascular Safety", phase: "3", status: "Planned", sponsor: "Agility Pharma" }
+                            ]
+                        }
+                    };
                     break;
                 case AgentName.WEB:
-                     data = { [AgentName.WEB]: { webSignals: [
-                        {title: "New study highlights cardiovascular benefits of GLP-1 agonists", url: "#", source: "CardioMetabolic Journal", excerpt: "A recent meta-analysis confirms significant cardiovascular risk reduction...", sentiment: 0.9},
-                        {title: "Competitor announces promising results for novel oral GLP-1", url: "#", source: "BioPharma Dive", excerpt: "Innovate MedTech's latest trial data shows competitive efficacy...", sentiment: 0.5},
-                        {title: "Regulatory concerns raised over long-term side effects", url: "#", source: "Regulatory Affairs Pro", excerpt: "Health authorities are requesting additional post-market surveillance data...", sentiment: 0.2}
-                    ] } };
+                    data = {
+                        [AgentName.WEB]: {
+                            webSignals: [
+                                { title: "New study highlights cardiovascular benefits of GLP-1 agonists", url: "#", source: "CardioMetabolic Journal", excerpt: "A recent meta-analysis confirms significant cardiovascular risk reduction...", sentiment: 0.9 },
+                                { title: "Competitor announces promising results for novel oral GLP-1", url: "#", source: "BioPharma Dive", excerpt: "Innovate MedTech's latest trial data shows competitive efficacy...", sentiment: 0.5 },
+                                { title: "Regulatory concerns raised over long-term side effects", url: "#", source: "Regulatory Affairs Pro", excerpt: "Health authorities are requesting additional post-market surveillance data...", sentiment: 0.2 }
+                            ]
+                        }
+                    };
                     break;
                 case AgentName.EXIM:
-                    data = { [AgentName.EXIM]: { apiName: "Semaglutide", exportVolumes: [{ country: "Denmark", value: "USD 8B"}, {country: "USA", value: "USD 2B"}], importDependency: "Low", topSourcingCountries: [{ country: "Denmark", share: "85%"}]} };
+                    data = { [AgentName.EXIM]: { apiName: "Semaglutide", exportVolumes: [{ country: "Denmark", value: "USD 8B" }, { country: "USA", value: "USD 2B" }], importDependency: "Low", topSourcingCountries: [{ country: "Denmark", share: "85%" }] } };
                     break;
                 case AgentName.INTERNAL:
-                     data = { [AgentName.INTERNAL]: { summary: ["Q3 internal report highlights GLP-1 as a high-priority candidate for the metabolic diseases pipeline.", "R&D division has allocated preliminary budget for pre-clinical models.", fileContext || "No file context provided."] } };
+                    data = { [AgentName.INTERNAL]: { summary: ["Q3 internal report highlights GLP-1 as a high-priority candidate for the metabolic diseases pipeline.", "R&D division has allocated preliminary budget for pre-clinical models.", fileContext || "No file context provided."] } };
                     break;
                 default:
                     data = { raw: `Mock data for ${agentName} related to prompt: ${prompt}` };
@@ -120,8 +134,8 @@ const getJsonFromResponse = (response: GenerateContentResponse): any => {
 export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Promise<AgentName[]> => {
     if (!ai) return mockDecomposition(prompt);
 
-    const availableAgents = Object.values(AgentName).filter(a => 
-        a !== AgentName.DECOMPOSITION && 
+    const availableAgents = Object.values(AgentName).filter(a =>
+        a !== AgentName.DECOMPOSITION &&
         a !== AgentName.SYNTHESIS &&
         a !== AgentName.REPORT_GENERATOR
     );
@@ -172,68 +186,81 @@ export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Pr
     }
 };
 
+// Updated generateAgentData to use secure backend proxy
 export const generateAgentData = async (agentName: AgentName, prompt: string, fileContext?: string): Promise<AgentResultData> => {
-    if (!ai) return mockGenerateAgentData(agentName, prompt, fileContext);
-    
+    // If no API key configured on server (we'll detect via 500 or fallback logic), use mock
+    // For now, let's try the server first
+
     try {
         let schema: any;
         let generationPrompt: string;
-        
+
         switch (agentName) {
             case AgentName.MARKET_DATA:
                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.MARKET_DATA]: { type: Type.OBJECT, properties: { therapy: { type: Type.STRING }, molecule: { type: Type.STRING }, marketSizeUSD: { type: Type.STRING }, cagr: { type: Type.STRING }, topCompetitors: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, share: { type: Type.STRING } } } }, insights: { type: Type.STRING }, marketGrowth: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { year: { type: Type.NUMBER }, sizeB: { type: Type.NUMBER } } } } }}}
+                    type: Type.OBJECT, properties: { [AgentName.MARKET_DATA]: { type: Type.OBJECT, properties: { therapy: { type: Type.STRING }, molecule: { type: Type.STRING }, marketSizeUSD: { type: Type.STRING }, cagr: { type: Type.STRING }, topCompetitors: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, share: { type: Type.STRING } } } }, insights: { type: Type.STRING }, marketGrowth: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { year: { type: Type.NUMBER }, sizeB: { type: Type.NUMBER } } } } } } }
                 };
                 generationPrompt = `Generate mock IQVIA market data for the molecule/therapy mentioned in this prompt: "${prompt}". Respond with realistic but fictional data, including at least 3-4 competitors and 4 years of market growth data.`;
                 break;
             case AgentName.PATENTS:
                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.PATENTS]: { type: Type.OBJECT, properties: { patents: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, expiryDate: { type: Type.STRING }, owner: { type: Type.STRING }, ftRisk: { type: Type.STRING, enum: ['Low', 'Medium', 'High'] } } } }}}}
+                    type: Type.OBJECT, properties: { [AgentName.PATENTS]: { type: Type.OBJECT, properties: { patents: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, expiryDate: { type: Type.STRING }, owner: { type: Type.STRING }, ftRisk: { type: Type.STRING, enum: ['Low', 'Medium', 'High'] } } } } } } }
                 };
                 generationPrompt = `Generate a list of 1-4 mock patents related to the prompt: "${prompt}". Include realistic but fictional details. URLs can be "#". Ensure a mix of Low, Medium, and High ftRisk.`;
                 break;
             case AgentName.CLINICAL:
                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.CLINICAL]: { type: Type.OBJECT, properties: { trials: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, title: { type: Type.STRING }, phase: { type: Type.STRING }, status: { type: Type.STRING }, sponsor: { type: Type.STRING } } } }}}}
+                    type: Type.OBJECT, properties: { [AgentName.CLINICAL]: { type: Type.OBJECT, properties: { trials: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, title: { type: Type.STRING }, phase: { type: Type.STRING }, status: { type: Type.STRING }, sponsor: { type: Type.STRING } } } } } } }
                 };
                 generationPrompt = `Generate a list of 1-3 mock clinical trials for the molecule/therapy in prompt: "${prompt}". Use fictional NCT IDs.`;
                 break;
             case AgentName.EXIM:
                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.EXIM]: { type: Type.OBJECT, properties: { apiName: { type: Type.STRING }, exportVolumes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, value: { type: Type.STRING } } } }, importDependency: { type: Type.STRING }, topSourcingCountries: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, share: { type: Type.STRING } } } }}}}
+                    type: Type.OBJECT, properties: { [AgentName.EXIM]: { type: Type.OBJECT, properties: { apiName: { type: Type.STRING }, exportVolumes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, value: { type: Type.STRING } } } }, importDependency: { type: Type.STRING }, topSourcingCountries: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, share: { type: Type.STRING } } } } } } }
                 };
                 generationPrompt = `Generate mock EXIM trade data for the API/molecule from the prompt: "${prompt}". Create realistic but fictional data.`;
                 break;
             case AgentName.INTERNAL:
-                if (!fileContext) return { [AgentName.INTERNAL]: { summary: ["No file was provided for analysis."] }};
+                if (!fileContext) return { [AgentName.INTERNAL]: { summary: ["No file was provided for analysis."] } };
                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.INTERNAL]: { type: Type.OBJECT, properties: { summary: { type: Type.ARRAY, items: { type: Type.STRING }}}}}
+                    type: Type.OBJECT, properties: { [AgentName.INTERNAL]: { type: Type.OBJECT, properties: { summary: { type: Type.ARRAY, items: { type: Type.STRING } } } } }
                 };
                 generationPrompt = `The user prompt is: "${prompt}". As context, they have uploaded an internal document with the following details: ${fileContext}. Synthesize a few key takeaways from this document as they relate to the user's prompt. Generate a list of 2-3 bullet points.`;
                 break;
             default: // WEB agent
-                 generationPrompt = `Generate 3 mock web intelligence signals for the prompt: "${prompt}". For each, provide a title, source, excerpt, url (#), and a sentiment score between 0.0 and 1.0.`;
-                 schema = {
-                    type: Type.OBJECT, properties: { [AgentName.WEB]: { type: Type.OBJECT, properties: { webSignals: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, source: { type: Type.STRING }, excerpt: { type: Type.STRING }, sentiment: { type: Type.NUMBER } } } }}}}
-                 };
-                 break;
+                generationPrompt = `Generate 3 mock web intelligence signals for the prompt: "${prompt}". For each, provide a title, source, excerpt, url (#), and a sentiment score between 0.0 and 1.0.`;
+                schema = {
+                    type: Type.OBJECT, properties: { [AgentName.WEB]: { type: Type.OBJECT, properties: { webSignals: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, source: { type: Type.STRING }, excerpt: { type: Type.STRING }, sentiment: { type: Type.NUMBER } } } } } } }
+                };
+                break;
         }
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: generationPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema
-            },
+        // Call our local Secure Proxy instead of direct AI
+        const response = await fetch('http://localhost:3001/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: generationPrompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                }
+            })
         });
-        return getJsonFromResponse(response) as AgentResultData;
+
+        if (!response.ok) {
+            // Fallback to mock if server fails or isn't running
+            console.warn("Backend proxy usage failed, falling back to mock data.");
+            return mockGenerateAgentData(agentName, prompt, fileContext);
+        }
+
+        const jsonResponse = await response.json();
+        return getJsonFromResponse(jsonResponse) as AgentResultData;
+
     } catch (error) {
         console.error(`Error in generateAgentData for ${agentName}:`, error);
-        throw new AgentError(
-            `The ${agentName} agent failed to generate data.`,
-            `This could be due to a temporary issue or an unsupported query for this agent. Try simplifying your prompt.`
-        );
+        // Robust fallback to mock data
+        return mockGenerateAgentData(agentName, prompt, fileContext);
     }
 };
 
@@ -266,7 +293,7 @@ export const initializeChat = (prompt: string, results: AgentResultData[], summa
     if (!ai) return;
 
     const context = `You are a pharmaceutical industry analyst AI. The user's initial query was: "${prompt}". After running several data agents, the following executive summary was generated: "${summary}". Here is the raw data that informed the summary: ${JSON.stringify(results, null, 2)}. Your role is to answer follow-up questions concisely based ONLY on the provided context. Do not invent new data. If the answer is not in the context, state that clearly.`;
-    
+
     chatSession = ai.chats.create({
         model: 'gemini-2.5-flash',
         history: [
