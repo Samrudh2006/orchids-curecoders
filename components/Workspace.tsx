@@ -4,7 +4,7 @@ import { QUICK_PROMPTS } from '../constants';
 import AgentCard from './AgentCard';
 import Dashboard from './Dashboard';
 import Report from './Report';
-import AIChatbot from './AIChatbot';
+import ARIAFloatingPanel from './ARIAFloatingPanel';
 import { Sparkles, UploadCloud, X, History as HistoryIcon, ChevronDown, FileText } from './Icons';
 import { useAppContext } from '../hooks/useAppContext';
 import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
@@ -1086,8 +1086,8 @@ const Workspace = () => {
                                     </div>
                                 )}
                                 
-                                <div className="mt-8">
-                                    <AIChatbot />
+                                <div className="mt-8 flex justify-start">
+                                    <ARIAFloatingPanel />
                                 </div>
                             </div>
                         </>
