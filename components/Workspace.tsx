@@ -4,7 +4,7 @@ import { QUICK_PROMPTS } from '../constants';
 import AgentCard from './AgentCard';
 import Dashboard from './Dashboard';
 import Report from './Report';
-import ARIAFloatingPanel from './ARIAFloatingPanel';
+import AIChatbot from './AIChatbot';
 import { Sparkles, UploadCloud, X, History as HistoryIcon, ChevronDown, FileText } from './Icons';
 import { useAppContext } from '../hooks/useAppContext';
 import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
@@ -12,19 +12,19 @@ import DocumentManager from './DocumentManager';
 import DragDropUpload from './DragDropUpload';
 
 const Workspace = () => {
-    const { 
-        agents, 
-        summary, 
-        isOrchestrating, 
-        isReportReady, 
-        error, 
-        currentRunPrompt, 
-        uploadedFile, 
+    const {
+        agents,
+        summary,
+        isOrchestrating,
+        isReportReady,
+        error,
+        currentRunPrompt,
+        uploadedFile,
         setUploadedFile,
         runMasterAgent,
         searchHistory,
     } = useAppContext();
-    
+
     const {
         explainFeature,
         speakAgentStatus,
@@ -33,7 +33,7 @@ const Workspace = () => {
         isVoiceEnabled
     } = useVoiceFeatures();
 
-    const [prompt, setPrompt] = useState(''); 
+    const [prompt, setPrompt] = useState('');
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
     const [isExportingExcel, setIsExportingExcel] = useState(false);
     const [isExportingPpt, setIsExportingPpt] = useState(false);
@@ -41,26 +41,26 @@ const Workspace = () => {
     const [showDocumentManager, setShowDocumentManager] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const reportRef = useRef<HTMLDivElement>(null);
-    
+
     // Voice assistant effects
     useEffect(() => {
         if (isVoiceEnabled) {
             speakSectionWelcome('workspace');
         }
     }, []); // Only run on mount
-    
+
     useEffect(() => {
         if (isOrchestrating && isVoiceEnabled) {
             explainFeature('agents-working');
         }
     }, [isOrchestrating]);
-    
+
     useEffect(() => {
         if (isReportReady && summary && isVoiceEnabled) {
             explainFeature('synthesis-complete');
         }
     }, [isReportReady, summary]);
-    
+
     // Monitor agent status changes
     useEffect(() => {
         agents.forEach(agent => {
@@ -69,12 +69,12 @@ const Workspace = () => {
             }
         });
     }, [agents]);
-    
+
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             const file = event.target.files[0];
             setUploadedFile(file);
-            
+
             // Store the document for later access
             await storeDocument(file);
         }
@@ -86,7 +86,7 @@ const Workspace = () => {
             reader.onload = () => {
                 try {
                     const base64Data = (reader.result as string).split(',')[1]; // Remove data:type;base64, prefix
-                    
+
                     const storedDoc = {
                         id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                         name: file.name,
@@ -95,18 +95,18 @@ const Workspace = () => {
                         uploadDate: new Date().toISOString(),
                         base64Data: base64Data
                     };
-                    
+
                     // Get existing documents
                     const existing = JSON.parse(localStorage.getItem('curecoders_documents') || '[]');
-                    
+
                     // Add new document at the beginning
                     const updated = [storedDoc, ...existing];
-                    
+
                     // Keep only the last 50 documents to prevent storage overflow
                     const trimmed = updated.slice(0, 50);
-                    
+
                     localStorage.setItem('curecoders_documents', JSON.stringify(trimmed));
-                    
+
                     console.log(`Document "${file.name}" stored successfully`);
                     resolve();
                 } catch (error) {
@@ -114,16 +114,16 @@ const Workspace = () => {
                     reject(error);
                 }
             };
-            
+
             reader.onerror = () => {
                 console.error('Error reading file');
                 reject(new Error('Failed to read file'));
             };
-            
+
             reader.readAsDataURL(file);
         });
     };
-    
+
     const handleReplay = (pastPrompt: string) => {
         setPrompt(pastPrompt);
         runMasterAgent(pastPrompt);
@@ -135,9 +135,9 @@ const Workspace = () => {
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx || !window.Chart) return;
-        
+
         const chart = new window.Chart(ctx, {
             type: 'pie',
             data: {
@@ -167,12 +167,12 @@ const Workspace = () => {
                 }
             }
         });
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', x, y, width * 0.8, 80);
-        
+
         chart.destroy();
         canvas.remove();
     };
@@ -182,9 +182,9 @@ const Workspace = () => {
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx || !window.Chart) return;
-        
+
         const chart = new window.Chart(ctx, {
             type: 'line',
             data: {
@@ -215,12 +215,12 @@ const Workspace = () => {
                 }
             }
         });
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', x, y, width * 0.8, 80);
-        
+
         chart.destroy();
         canvas.remove();
     };
@@ -230,15 +230,15 @@ const Workspace = () => {
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx || !window.Chart) return;
-        
+
         const riskLevels = patents.reduce((acc, patent) => {
             const risk = patent.riskLevel || 'Medium';
             acc[risk] = (acc[risk] || 0) + 1;
             return acc;
         }, {});
-        
+
         const chart = new window.Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -266,12 +266,12 @@ const Workspace = () => {
                 }
             }
         });
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', x, y, width * 0.8, 80);
-        
+
         chart.destroy();
         canvas.remove();
     };
@@ -281,15 +281,15 @@ const Workspace = () => {
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx || !window.Chart) return;
-        
+
         const phases = trials.reduce((acc, trial) => {
             const phase = trial.phase || 'Phase I';
             acc[phase] = (acc[phase] || 0) + 1;
             return acc;
         }, {});
-        
+
         const chart = new window.Chart(ctx, {
             type: 'bar',
             data: {
@@ -315,19 +315,19 @@ const Workspace = () => {
                 },
                 scales: {
                     x: { ticks: { color: '#1e293b' } },
-                    y: { 
+                    y: {
                         ticks: { color: '#1e293b' },
                         beginAtZero: true
                     }
                 }
             }
         });
-        
+
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', x, y, width * 0.8, 80);
-        
+
         chart.destroy();
         canvas.remove();
     };
@@ -336,11 +336,11 @@ const Workspace = () => {
         pdf.setFontSize(14);
         pdf.setFont(undefined, 'bold');
         pdf.text('Patent Details', x, y);
-        
+
         let tableY = y + 10;
         pdf.setFontSize(10);
         pdf.setFont(undefined, 'normal');
-        
+
         patents.slice(0, 5).forEach((patent, index) => {
             pdf.text(`${index + 1}. ${patent.title || 'Patent Title'}`, x, tableY);
             tableY += 5;
@@ -353,11 +353,11 @@ const Workspace = () => {
         pdf.setFontSize(14);
         pdf.setFont(undefined, 'bold');
         pdf.text('Clinical Trial Details', x, y);
-        
+
         let tableY = y + 10;
         pdf.setFontSize(10);
         pdf.setFont(undefined, 'normal');
-        
+
         trials.slice(0, 5).forEach((trial, index) => {
             pdf.text(`${index + 1}. ${trial.title || 'Clinical Trial'}`, x, tableY);
             tableY += 5;
@@ -372,8 +372,8 @@ const Workspace = () => {
         const jsPDF = window.jspdf?.jsPDF;
         const Chart = window.Chart;
 
-        console.log("Advanced PDF generation - Library check:", { 
-            html2canvas: !!html2canvas, 
+        console.log("Advanced PDF generation - Library check:", {
+            html2canvas: !!html2canvas,
             jsPDF: !!jsPDF,
             Chart: !!Chart,
             agents: agents.length,
@@ -381,10 +381,10 @@ const Workspace = () => {
         });
 
         if (!html2canvas || !jsPDF || !Chart) {
-            console.error("Required libraries not loaded:", { 
-                html2canvas: !!html2canvas, 
-                jsPDF: !!jsPDF, 
-                Chart: !!Chart 
+            console.error("Required libraries not loaded:", {
+                html2canvas: !!html2canvas,
+                jsPDF: !!jsPDF,
+                Chart: !!Chart
             });
             alert("PDF libraries not fully loaded. Please refresh the page and try again.");
             return;
@@ -403,7 +403,7 @@ const Workspace = () => {
             const pageHeight = 297;
             const margin = 20;
             const contentWidth = pageWidth - (margin * 2);
-            
+
             // Helper function to add text with wrapping
             const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 12) => {
                 pdf.setFontSize(fontSize);
@@ -415,48 +415,48 @@ const Workspace = () => {
             // Cover Page
             pdf.setFillColor(30, 41, 59); // Dark pharmaceutical theme
             pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-            
+
             // Add CureCoders logo area (simulated)
             pdf.setFillColor(6, 182, 212, 0.2); // Primary color with transparency
-            pdf.circle(pageWidth/2, 80, 30, 'F');
-            
+            pdf.circle(pageWidth / 2, 80, 30, 'F');
+
             pdf.setTextColor(255, 255, 255);
             pdf.setFontSize(32);
             pdf.setFont(undefined, 'bold');
-            pdf.text('CureCoders', pageWidth/2, 120, { align: 'center' });
-            
+            pdf.text('CureCoders', pageWidth / 2, 120, { align: 'center' });
+
             pdf.setFontSize(24);
             pdf.setFont(undefined, 'normal');
-            pdf.text('AI Research Report', pageWidth/2, 135, { align: 'center' });
-            
+            pdf.text('AI Research Report', pageWidth / 2, 135, { align: 'center' });
+
             pdf.setFontSize(16);
             pdf.setTextColor(6, 182, 212);
-            pdf.text(`Query: ${currentRunPrompt}`, pageWidth/2, 160, { align: 'center', maxWidth: contentWidth });
-            
+            pdf.text(`Query: ${currentRunPrompt}`, pageWidth / 2, 160, { align: 'center', maxWidth: contentWidth });
+
             pdf.setTextColor(255, 255, 255);
             pdf.setFontSize(12);
-            pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth/2, 180, { align: 'center' });
+            pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 180, { align: 'center' });
 
             // Executive Summary Page
             pdf.addPage();
             pdf.setFillColor(255, 255, 255);
             pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-            
+
             let yPos = margin + 10;
-            
+
             // Header
             pdf.setTextColor(6, 182, 212);
             pdf.setFontSize(24);
             pdf.setFont(undefined, 'bold');
             pdf.text('Executive Summary', margin, yPos);
             yPos += 15;
-            
+
             // Add decorative line
             pdf.setDrawColor(6, 182, 212);
             pdf.setLineWidth(2);
             pdf.line(margin, yPos, pageWidth - margin, yPos);
             yPos += 10;
-            
+
             // Summary content
             pdf.setTextColor(51, 65, 85);
             pdf.setFont(undefined, 'normal');
@@ -468,23 +468,23 @@ const Workspace = () => {
                 if (agent.status === AgentStatus.DONE && agent.result) {
                     pdf.addPage();
                     yPos = margin + 10;
-                    
+
                     // Agent header
                     pdf.setTextColor(6, 182, 212);
                     pdf.setFontSize(20);
                     pdf.setFont(undefined, 'bold');
                     pdf.text(agent.name, margin, yPos);
                     yPos += 15;
-                    
+
                     // Decorative line
                     pdf.setDrawColor(6, 182, 212);
                     pdf.setLineWidth(1);
                     pdf.line(margin, yPos, pageWidth - margin, yPos);
                     yPos += 10;
-                    
+
                     pdf.setTextColor(51, 65, 85);
                     pdf.setFont(undefined, 'normal');
-                    
+
                     // Generate charts based on agent type
                     if (agent.name === AgentName.MARKET_DATA) {
                         const marketData = agent.result[AgentName.MARKET_DATA];
@@ -494,26 +494,26 @@ const Workspace = () => {
                             pdf.setFont(undefined, 'bold');
                             pdf.text('Key Metrics', margin, yPos);
                             yPos += 8;
-                            
+
                             pdf.setFont(undefined, 'normal');
                             pdf.setFontSize(12);
                             yPos = addWrappedText(`Market Size: $${marketData.marketSizeUSD}`, margin, yPos, contentWidth);
                             yPos = addWrappedText(`CAGR: ${marketData.cagr}`, margin, yPos, contentWidth);
                             yPos = addWrappedText(`Therapy: ${marketData.therapy}`, margin, yPos, contentWidth);
                             yPos += 10;
-                            
+
                             // Create competitor pie chart
                             if (marketData.topCompetitors && marketData.topCompetitors.length > 0) {
                                 await generateCompetitorChart(pdf, marketData.topCompetitors, margin, yPos, contentWidth);
                                 yPos += 100;
                             }
-                            
+
                             // Market growth chart
                             if (marketData.marketGrowth && marketData.marketGrowth.length > 0) {
                                 await generateMarketGrowthChart(pdf, marketData.marketGrowth, margin, yPos, contentWidth);
                                 yPos += 100;
                             }
-                            
+
                             // Insights
                             if (marketData.insights) {
                                 pdf.setFontSize(14);
@@ -531,7 +531,7 @@ const Workspace = () => {
                             // Patent risk chart
                             await generatePatentRiskChart(pdf, patentData.patents, margin, yPos, contentWidth);
                             yPos += 100;
-                            
+
                             // Patent table
                             generatePatentTable(pdf, patentData.patents, margin, yPos, contentWidth);
                         }
@@ -541,7 +541,7 @@ const Workspace = () => {
                             // Clinical phase distribution chart
                             await generateClinicalPhaseChart(pdf, clinicalData.trials, margin, yPos, contentWidth);
                             yPos += 100;
-                            
+
                             // Trials table
                             generateClinicalTable(pdf, clinicalData.trials, margin, yPos, contentWidth);
                         }
@@ -559,9 +559,9 @@ const Workspace = () => {
             // Save the PDF
             const fileName = `CureCoders_Advanced_Report_${new Date().toISOString().split('T')[0]}.pdf`;
             pdf.save(fileName);
-            
+
             console.log(`Advanced PDF saved as: ${fileName}`);
-            
+
         } catch (error) {
             console.error("Error generating advanced PDF:", error);
             alert(`Failed to generate PDF: ${error.message || 'Unknown error'}`);
@@ -572,7 +572,7 @@ const Workspace = () => {
 
     const handleExportExcel = () => {
         const XLSX = window.XLSX;
-        
+
         if (!XLSX) {
             alert("Excel library not loaded. Please refresh the page and try again.");
             return;
@@ -581,7 +581,7 @@ const Workspace = () => {
         setIsExportingExcel(true);
         try {
             const wb = XLSX.utils.book_new();
-            
+
             // Create Executive Summary sheet with proper formatting
             const cleanSummary = summary.replace(/\*\*(.*?)\*\*/g, '$1').replace(/<br \/>/g, '\n');
             const summaryData = [
@@ -593,7 +593,7 @@ const Workspace = () => {
                 { "": "Executive Summary", "Value": cleanSummary }
             ];
             const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-            
+
             // Style the summary sheet
             summaryWs['!cols'] = [{ width: 25 }, { width: 80 }];
             XLSX.utils.book_append_sheet(wb, summaryWs, "Executive Summary");
@@ -603,13 +603,13 @@ const Workspace = () => {
             const marketAgent = agents.find(a => a.name === AgentName.MARKET_DATA && a.status === AgentStatus.DONE);
             const patentAgent = agents.find(a => a.name === AgentName.PATENTS && a.status === AgentStatus.DONE);
             const clinicalAgent = agents.find(a => a.name === AgentName.CLINICAL && a.status === AgentStatus.DONE);
-            
+
             overviewData.push({ "KPI": "Market Size", "Value": marketAgent?.result?.[AgentName.MARKET_DATA]?.marketSizeUSD || "N/A", "Unit": "USD" });
             overviewData.push({ "KPI": "CAGR", "Value": marketAgent?.result?.[AgentName.MARKET_DATA]?.cagr || "N/A", "Unit": "%" });
             overviewData.push({ "KPI": "High-Risk Patents", "Value": patentAgent?.result?.[AgentName.PATENTS]?.patents?.filter(p => p.ftRisk === 'High').length || 0, "Unit": "Count" });
             overviewData.push({ "KPI": "Active Clinical Trials", "Value": clinicalAgent?.result?.[AgentName.CLINICAL]?.trials?.filter(t => t.status.includes('Recruiting') || t.status.includes('Active')).length || 0, "Unit": "Count" });
             overviewData.push({ "KPI": "Agents Completed", "Value": agents.filter(a => a.status === AgentStatus.DONE).length, "Unit": "Count" });
-            
+
             const overviewWs = XLSX.utils.json_to_sheet(overviewData);
             overviewWs['!cols'] = [{ width: 25 }, { width: 20 }, { width: 15 }];
             XLSX.utils.book_append_sheet(wb, overviewWs, "Key Metrics");
@@ -620,7 +620,7 @@ const Workspace = () => {
                     const sheetName = agent.name.replace(/[\\/*?[\]:]/g, "").substring(0, 31);
 
                     switch (agent.name) {
-                        case AgentName.MARKET_DATA: 
+                        case AgentName.MARKET_DATA:
                             const marketData = agent.result[AgentName.MARKET_DATA];
                             if (marketData) {
                                 sheetData = [
@@ -638,39 +638,39 @@ const Workspace = () => {
                                 ];
                             }
                             break;
-                        case AgentName.PATENTS: 
+                        case AgentName.PATENTS:
                             sheetData = agent.result[AgentName.PATENTS]?.patents?.map(p => ({
                                 "Patent Title": p.title,
                                 "Owner": p.owner,
                                 "Expiry Date": p.expiryDate,
                                 "FTO Risk": p.ftRisk,
                                 "URL": p.url
-                            })) || null; 
+                            })) || null;
                             break;
-                        case AgentName.CLINICAL: 
+                        case AgentName.CLINICAL:
                             sheetData = agent.result[AgentName.CLINICAL]?.trials?.map(t => ({
                                 "Trial ID": t.id,
                                 "Title": t.title,
                                 "Phase": t.phase,
                                 "Status": t.status,
                                 "Sponsor": t.sponsor
-                            })) || null; 
+                            })) || null;
                             break;
-                        case AgentName.EXIM: 
-                           const eximData = agent.result[AgentName.EXIM];
-                           if (eximData) {
-                               sheetData = [
-                                   { "Category": "API Name", "Value": eximData.apiName },
-                                   { "Category": "Import Dependency", "Value": eximData.importDependency },
-                                   { "Category": "", "Value": "" },
-                                   { "Category": "Export Volumes", "Value": "" },
-                                   ...eximData.exportVolumes.map(d => ({ "Category": d.country, "Value": d.value })),
-                                   { "Category": "", "Value": "" },
-                                   { "Category": "Top Sourcing Countries", "Value": "" },
-                                   ...eximData.topSourcingCountries.map(d => ({ "Category": d.country, "Value": d.share }))
-                               ];
-                           }
-                           break;
+                        case AgentName.EXIM:
+                            const eximData = agent.result[AgentName.EXIM];
+                            if (eximData) {
+                                sheetData = [
+                                    { "Category": "API Name", "Value": eximData.apiName },
+                                    { "Category": "Import Dependency", "Value": eximData.importDependency },
+                                    { "Category": "", "Value": "" },
+                                    { "Category": "Export Volumes", "Value": "" },
+                                    ...eximData.exportVolumes.map(d => ({ "Category": d.country, "Value": d.value })),
+                                    { "Category": "", "Value": "" },
+                                    { "Category": "Top Sourcing Countries", "Value": "" },
+                                    ...eximData.topSourcingCountries.map(d => ({ "Category": d.country, "Value": d.share }))
+                                ];
+                            }
+                            break;
                         case AgentName.WEB:
                             sheetData = agent.result[AgentName.WEB]?.webSignals?.map(w => ({
                                 "Title": w.title,
@@ -708,19 +708,19 @@ const Workspace = () => {
 
     const handleExportPpt = () => {
         const PptxGenJS = window.PptxGenJS;
-        
-        console.log("PowerPoint export attempt:", { 
-            PptxGenJS: !!PptxGenJS, 
+
+        console.log("PowerPoint export attempt:", {
+            PptxGenJS: !!PptxGenJS,
             type: typeof PptxGenJS,
             window: typeof window !== 'undefined'
         });
-        
+
         if (!PptxGenJS) {
             console.error("PptxGenJS not found on window object");
             alert("PowerPoint library not loaded. Please refresh the page and try again.");
             return;
         }
-        
+
         // Test basic functionality first
         try {
             const testPptx = new PptxGenJS();
@@ -735,7 +735,7 @@ const Workspace = () => {
         try {
             let pptx = new PptxGenJS();
             pptx.layout = 'LAYOUT_WIDE';
-            
+
             // Define pharmaceutical color palette
             const pharmaColors = {
                 primary: "06b6d4", // Cyan
@@ -745,13 +745,13 @@ const Workspace = () => {
                 text: "334155", // Dark gray
                 light: "f8fafc" // Light gray
             };
-            
+
             // Title slide with pharmaceutical theme and logo background
             const titleSlide = pptx.addSlide();
-            
+
             // Set slide background
             titleSlide.background = { color: pharmaColors.dark };
-            
+
             // Add decorative shapes for pharmaceutical theme
             titleSlide.addShape("rect", {
                 x: 0.2, y: 0.2, w: 0.3, h: 0.1,
@@ -761,23 +761,23 @@ const Workspace = () => {
                 x: 9.5, y: 5.2, w: 0.3, h: 0.1,
                 fill: { color: pharmaColors.secondary }
             });
-            
+
             // Add title content
-            titleSlide.addText("CureCoders AI Research Report", { 
-                x: 1, y: 1.5, w: 8, h: 1, 
-                fontSize: 44, bold: true, color: "ffffff", align: "center" 
+            titleSlide.addText("CureCoders AI Research Report", {
+                x: 1, y: 1.5, w: 8, h: 1,
+                fontSize: 44, bold: true, color: "ffffff", align: "center"
             });
-            
-            titleSlide.addText(`Research Query: ${currentRunPrompt}`, { 
-                x: 1, y: 2.8, w: 8, h: 0.8, 
-                fontSize: 18, color: pharmaColors.secondary, align: "center", italic: true 
+
+            titleSlide.addText(`Research Query: ${currentRunPrompt}`, {
+                x: 1, y: 2.8, w: 8, h: 0.8,
+                fontSize: 18, color: pharmaColors.secondary, align: "center", italic: true
             });
-            
-            titleSlide.addText(`Generated on: ${new Date().toLocaleDateString()}`, { 
-                x: 1, y: 3.8, w: 8, h: 0.5, 
-                fontSize: 14, color: "ffffff", align: "center" 
+
+            titleSlide.addText(`Generated on: ${new Date().toLocaleDateString()}`, {
+                x: 1, y: 3.8, w: 8, h: 0.5,
+                fontSize: 14, color: "ffffff", align: "center"
             });
-            
+
             // Add pharmaceutical symbols
             titleSlide.addShape("rect", {
                 x: 2, y: 4.5, w: 0.5, h: 0.1,
@@ -791,52 +791,52 @@ const Workspace = () => {
             // Executive Summary slide with pharmaceutical theme
             const summarySlide = pptx.addSlide();
             summarySlide.background = { color: pharmaColors.light };
-            
+
             // Add header with CureCoders branding
-            summarySlide.addText("CureCoders", { 
-                x: 0.5, y: 0.2, w: 3, h: 0.5, 
-                fontSize: 16, bold: true, color: pharmaColors.primary 
+            summarySlide.addText("CureCoders", {
+                x: 0.5, y: 0.2, w: 3, h: 0.5,
+                fontSize: 16, bold: true, color: pharmaColors.primary
             });
-            summarySlide.addText("Executive Summary", { 
-                x: 0.5, y: 0.8, w: 9, h: 0.8, 
-                fontSize: 28, bold: true, color: pharmaColors.dark 
+            summarySlide.addText("Executive Summary", {
+                x: 0.5, y: 0.8, w: 9, h: 0.8,
+                fontSize: 28, bold: true, color: pharmaColors.dark
             });
-            
+
             // Add decorative line
             summarySlide.addShape("rect", {
                 x: 0.5, y: 1.5, w: 9, h: 0.05,
                 fill: { color: pharmaColors.primary }
             });
-            
+
             const cleanSummary = summary.replace(/\*\*(.*?)\*\*/g, '$1');
-            summarySlide.addText(cleanSummary, { 
-                x: 0.5, y: 2.0, w: 9, h: 3.5, 
-                fontSize: 16, color: pharmaColors.text, 
+            summarySlide.addText(cleanSummary, {
+                x: 0.5, y: 2.0, w: 9, h: 3.5,
+                fontSize: 16, color: pharmaColors.text,
                 valign: "top"
             });
 
             agents.forEach(agent => {
                 if (agent.status === AgentStatus.DONE && agent.result && agent.name !== AgentName.DECOMPOSITION && agent.name !== AgentName.SYNTHESIS && agent.name !== AgentName.REPORT_GENERATOR) {
                     const slide = pptx.addSlide();
-                    
+
                     // Add pharmaceutical-themed background for each slide
                     slide.background = { color: pharmaColors.light };
-                    
+
                     // Add header with CureCoders branding
-                    slide.addText("CureCoders", { 
-                        x: 0.5, y: 0.2, w: 3, h: 0.5, 
-                        fontSize: 14, bold: true, color: pharmaColors.primary 
+                    slide.addText("CureCoders", {
+                        x: 0.5, y: 0.2, w: 3, h: 0.5,
+                        fontSize: 14, bold: true, color: pharmaColors.primary
                     });
-                    
+
                     // Add decorative elements
                     slide.addShape("rect", {
                         x: 0.3, y: 0.7, w: 0.1, h: 0.6,
                         fill: { color: pharmaColors.primary }
                     });
-                    
-                    slide.addText(agent.name, { 
-                        x: 0.7, y: 0.7, w: 8.5, h: 0.8, 
-                        fontSize: 24, bold: true, color: pharmaColors.dark 
+
+                    slide.addText(agent.name, {
+                        x: 0.7, y: 0.7, w: 8.5, h: 0.8,
+                        fontSize: 24, bold: true, color: pharmaColors.dark
                     });
 
                     switch (agent.name) {
@@ -844,143 +844,143 @@ const Workspace = () => {
                             const marketData = agent.result[AgentName.MARKET_DATA];
                             if (marketData) {
                                 // Key metrics section
-                                slide.addText("Key Market Metrics", { 
-                                    x: 0.5, y: 1.7, w: 4, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Key Market Metrics", {
+                                    x: 0.5, y: 1.7, w: 4, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
-                                slide.addText(`Market Size: $${marketData.marketSizeUSD}\nCAGR: ${marketData.cagr}\nTherapy: ${marketData.therapy}`, { 
-                                    x: 0.5, y: 2.2, w: 4, h: 1.5, 
-                                    fontSize: 14, color: pharmaColors.text 
+
+                                slide.addText(`Market Size: $${marketData.marketSizeUSD}\nCAGR: ${marketData.cagr}\nTherapy: ${marketData.therapy}`, {
+                                    x: 0.5, y: 2.2, w: 4, h: 1.5,
+                                    fontSize: 14, color: pharmaColors.text
                                 });
-                                
+
                                 // Competitors table
                                 if (marketData.topCompetitors) {
                                     const rows = [["Competitor", "Market Share"]];
                                     marketData.topCompetitors.forEach(c => rows.push([c.name, c.share]));
-                                    slide.addTable(rows, { 
+                                    slide.addTable(rows, {
                                         x: 5.5, y: 1.7, w: 4, h: 2.5
                                     });
                                 }
-                                
+
                                 // Add insights
-                                slide.addText("Market Insights", { 
-                                    x: 0.5, y: 4.0, w: 9, h: 0.5, 
-                                    fontSize: 16, bold: true, color: pharmaColors.dark 
+                                slide.addText("Market Insights", {
+                                    x: 0.5, y: 4.0, w: 9, h: 0.5,
+                                    fontSize: 16, bold: true, color: pharmaColors.dark
                                 });
-                                slide.addText(marketData.insights, { 
-                                    x: 0.5, y: 4.5, w: 9, h: 1, 
-                                    fontSize: 14, color: pharmaColors.text 
+                                slide.addText(marketData.insights, {
+                                    x: 0.5, y: 4.5, w: 9, h: 1,
+                                    fontSize: 14, color: pharmaColors.text
                                 });
                             }
                             break;
                         case AgentName.PATENTS:
                             const patentData = agent.result[AgentName.PATENTS];
                             if (patentData?.patents) {
-                                slide.addText("Patent Analysis", { 
-                                    x: 0.5, y: 1.7, w: 9, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Patent Analysis", {
+                                    x: 0.5, y: 1.7, w: 9, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
+
                                 const rows = [["Patent Title", "Owner", "Expiry", "Risk"]];
                                 patentData.patents.forEach(p => rows.push([
-                                    p.title.substring(0, 30) + "...", 
-                                    p.owner, 
-                                    p.expiryDate, 
+                                    p.title.substring(0, 30) + "...",
+                                    p.owner,
+                                    p.expiryDate,
                                     p.ftRisk
                                 ]));
-                                slide.addTable(rows, { 
+                                slide.addTable(rows, {
                                     x: 0.5, y: 2.2, w: 9, h: 3
                                 });
                             }
                             break;
-                            
+
                         case AgentName.CLINICAL:
                             const clinicalData = agent.result[AgentName.CLINICAL];
                             if (clinicalData?.trials) {
-                                slide.addText("Clinical Trials Overview", { 
-                                    x: 0.5, y: 1.7, w: 9, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Clinical Trials Overview", {
+                                    x: 0.5, y: 1.7, w: 9, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
+
                                 const rows = [["Trial ID", "Phase", "Status", "Sponsor"]];
                                 clinicalData.trials.forEach(t => rows.push([
-                                    t.id, 
-                                    t.phase, 
-                                    t.status, 
+                                    t.id,
+                                    t.phase,
+                                    t.status,
                                     t.sponsor
                                 ]));
-                                slide.addTable(rows, { 
+                                slide.addTable(rows, {
                                     x: 0.5, y: 2.2, w: 9, h: 2.5
                                 });
                             }
                             break;
-                            
+
                         case AgentName.WEB:
                             const webData = agent.result[AgentName.WEB];
                             if (webData?.webSignals) {
-                                slide.addText("Web Intelligence Signals", { 
-                                    x: 0.5, y: 1.7, w: 9, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Web Intelligence Signals", {
+                                    x: 0.5, y: 1.7, w: 9, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
+
                                 let content = "";
                                 webData.webSignals.slice(0, 3).forEach((signal, i) => {
                                     content += `${i + 1}. ${signal.title}\n`;
                                     content += `   Source: ${signal.source} | Sentiment: ${(signal.sentiment * 100).toFixed(0)}%\n`;
                                     content += `   ${signal.excerpt.substring(0, 80)}...\n\n`;
                                 });
-                                
-                                slide.addText(content, { 
-                                    x: 0.5, y: 2.2, w: 9, h: 3, 
-                                    fontSize: 12, color: pharmaColors.text 
+
+                                slide.addText(content, {
+                                    x: 0.5, y: 2.2, w: 9, h: 3,
+                                    fontSize: 12, color: pharmaColors.text
                                 });
                             }
                             break;
-                            
+
                         case AgentName.EXIM:
                             const eximData = agent.result[AgentName.EXIM];
                             if (eximData) {
-                                slide.addText("Trade Flow Analysis", { 
-                                    x: 0.5, y: 1.7, w: 9, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Trade Flow Analysis", {
+                                    x: 0.5, y: 1.7, w: 9, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
-                                slide.addText(`API: ${eximData.apiName}`, { 
-                                    x: 0.5, y: 2.3, w: 9, h: 0.4, 
-                                    fontSize: 14, bold: true, color: pharmaColors.text 
+
+                                slide.addText(`API: ${eximData.apiName}`, {
+                                    x: 0.5, y: 2.3, w: 9, h: 0.4,
+                                    fontSize: 14, bold: true, color: pharmaColors.text
                                 });
-                                
+
                                 if (eximData.exportVolumes?.length > 0) {
                                     const exportRows = [["Country", "Export Value"]];
                                     eximData.exportVolumes.forEach(e => exportRows.push([e.country, e.value]));
-                                    slide.addTable(exportRows, { 
+                                    slide.addTable(exportRows, {
                                         x: 0.5, y: 2.8, w: 4, h: 2
                                     });
                                 }
-                                
+
                                 if (eximData.topSourcingCountries?.length > 0) {
                                     const sourceRows = [["Country", "Share"]];
                                     eximData.topSourcingCountries.forEach(s => sourceRows.push([s.country, s.share]));
-                                    slide.addTable(sourceRows, { 
+                                    slide.addTable(sourceRows, {
                                         x: 5.5, y: 2.8, w: 4, h: 2
                                     });
                                 }
                             }
                             break;
-                            
+
                         case AgentName.INTERNAL:
                             const internalData = agent.result[AgentName.INTERNAL];
                             if (internalData?.summary) {
-                                slide.addText("Internal Document Analysis", { 
-                                    x: 0.5, y: 1.7, w: 9, h: 0.5, 
-                                    fontSize: 18, bold: true, color: pharmaColors.dark 
+                                slide.addText("Internal Document Analysis", {
+                                    x: 0.5, y: 1.7, w: 9, h: 0.5,
+                                    fontSize: 18, bold: true, color: pharmaColors.dark
                                 });
-                                
+
                                 const content = internalData.summary.map((point, i) => `• ${point}`).join('\n');
-                                slide.addText(content, { 
-                                    x: 0.5, y: 2.3, w: 9, h: 3, 
-                                    fontSize: 14, color: pharmaColors.text 
+                                slide.addText(content, {
+                                    x: 0.5, y: 2.3, w: 9, h: 3,
+                                    fontSize: 14, color: pharmaColors.text
                                 });
                             }
                             break;
@@ -1001,7 +1001,7 @@ const Workspace = () => {
     return (
         <div id="workspace" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 scroll-mt-16">
             <div className="max-w-4xl mx-auto">
-                { agents.length === 0 && (
+                {agents.length === 0 && (
                     <>
                         <h2 className="font-display text-3xl font-bold text-center">Master Agent Workspace</h2>
                         <p className="mt-4 text-center text-slate-500 dark:text-slate-400">
@@ -1011,7 +1011,7 @@ const Workspace = () => {
                 )}
 
                 <div className="mt-8">
-                    { agents.length === 0 && (
+                    {agents.length === 0 && (
                         <>
                             <div className="relative">
                                 <textarea
@@ -1027,11 +1027,11 @@ const Workspace = () => {
                                     disabled={!prompt.trim() || isOrchestrating}
                                     className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center justify-center gap-2 px-4 py-2 font-semibold text-white bg-primary rounded-lg shadow-md hover:bg-primary-light disabled:bg-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-600 transition-all duration-300 transform hover:scale-105 disabled:scale-100"
                                 >
-                                <Sparkles className="w-5 h-5" />
-                                {isOrchestrating ? 'Running...' : 'Run Agents'}
+                                    <Sparkles className="w-5 h-5" />
+                                    {isOrchestrating ? 'Running...' : 'Run Agents'}
                                 </button>
                             </div>
-                            
+
                             <div className="mt-6">
                                 <DragDropUpload
                                     onFileUpload={async (file) => {
@@ -1042,7 +1042,7 @@ const Workspace = () => {
                                     onRemoveFile={() => setUploadedFile(null)}
                                     disabled={isOrchestrating}
                                 />
-                                
+
                                 <div className="mt-4 flex justify-center">
                                     <button
                                         type="button"
@@ -1053,7 +1053,7 @@ const Workspace = () => {
                                         Manage Documents
                                     </button>
                                 </div>
-                                
+
                                 {/* Hidden file input for backward compatibility */}
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                             </div>
@@ -1076,7 +1076,7 @@ const Workspace = () => {
                                 </div>
                                 {QUICK_PROMPTS.length > 6 && (
                                     <div className="mt-4 text-center">
-                                        <button 
+                                        <button
                                             onClick={() => setShowAllPrompts(!showAllPrompts)}
                                             className="flex items-center gap-2 mx-auto text-sm font-semibold text-primary hover:underline"
                                         >
@@ -1085,9 +1085,9 @@ const Workspace = () => {
                                         </button>
                                     </div>
                                 )}
-                                
-                                <div className="mt-8 flex justify-start">
-                                    <ARIAFloatingPanel />
+
+                                <div className="mt-8">
+                                    <AIChatbot />
                                 </div>
                             </div>
                         </>
@@ -1119,23 +1119,23 @@ const Workspace = () => {
                         <strong>Error:</strong> {error}
                     </div>
                 )}
-                
+
                 {isOrchestrating && agents.length > 0 && (
                     <div className="mt-12">
                         <div className="text-center mb-6">
-                             <h3 className="font-display text-2xl font-bold">AI Agents at Work...</h3>
-                             <p className="text-slate-500 dark:text-slate-400">Your request is being processed by our autonomous agent team.</p>
+                            <h3 className="font-display text-2xl font-bold">AI Agents at Work...</h3>
+                            <p className="text-slate-500 dark:text-slate-400">Your request is being processed by our autonomous agent team.</p>
                         </div>
                         <div className="space-y-4">
                             {agents.map((agent) => (
-                               <AgentCard key={agent.id} agent={agent} />
+                                <AgentCard key={agent.id} agent={agent} />
                             ))}
                         </div>
                     </div>
                 )}
-                
+
                 {!isOrchestrating && summary && (
-                    <Dashboard 
+                    <Dashboard
                         prompt={currentRunPrompt}
                         summary={summary}
                         agents={agents}
@@ -1148,7 +1148,7 @@ const Workspace = () => {
                         onExportPpt={handleExportPpt}
                     />
                 )}
-                
+
                 {isReportReady && (
                     <div style={{ position: 'fixed', left: '-9999px', top: 0, visibility: 'hidden' }}>
                         <div ref={reportRef} data-report-content="true">
@@ -1157,7 +1157,7 @@ const Workspace = () => {
                     </div>
                 )}
 
-                <DocumentManager 
+                <DocumentManager
                     isOpen={showDocumentManager}
                     onClose={() => setShowDocumentManager(false)}
                     onSelectDocument={(doc) => {
