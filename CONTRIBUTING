@@ -1,0 +1,310 @@
+# 🤝 Contributing to CureCoders — Pharmaceutical Intelligence Platform
+
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge)](https://github.com/Samrudh2006/orchids-curecoders/pulls)
+[![First Timers Friendly](https://img.shields.io/badge/First%20Timers-Friendly-blueviolet.svg?style=for-the-badge)](https://www.firsttimersonly.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge)](./LICENSE)
+
+## 🎉 Welcome!
+
+Thank you for your interest in contributing! Whether you're a developer,
+data scientist, life-sciences researcher, or pharma analyst — every
+thoughtful contribution helps make CureCoders better.
+
+> 💡 **What is this project?** CureCoders is an AI-powered, multi-agent
+> pharmaceutical intelligence platform. It turns natural-language research
+> queries into structured insights — market sizing, competitor maps,
+> patent cliffs, clinical-trial filters, and shareable PDF / Excel / PPT
+> reports.
+>
+> 🌐 **Live demo:** https://orchids-curecoders.vercel.app/
+
+---
+
+## 📋 Table of Contents
+
+| Section | What You'll Learn |
+|---|---|
+| [🚀 Getting Started](#-getting-started) | Set up the project locally |
+| [🐛 Report a Bug](#-found-a-bug-report-it) | How to file a clear bug report |
+| [💡 Suggest a Feature](#-have-an-idea-suggest-it) | How to propose new features |
+| [💻 Writing Code](#-writing-code) | Step-by-step contribution flow |
+| [📝 Commit Rules](#-commit-message-rules) | Conventional Commits we use |
+| [🎨 Code Style](#-code-style-guide) | TypeScript, Tailwind, components |
+| [🗄️ Mock Data Rules](#️-mock-data--api-rules) | Adding endpoints / sample data |
+| [🤖 AI Agent Rules](#-ai-agent--prompt-rules) | How to add or modify agents |
+| [🔒 Security Rules](#-security-rules) | Keeping the platform safe |
+| [✅ PR Checklist](#-pull-request-checklist) | Final checks before submitting |
+
+---
+
+## 🚀 Getting Started
+
+### 📦 What You Need
+
+```
+├── 🟢 Node.js 18 or newer
+├── 📦 npm (or bun)
+└── 🔀 Git
+```
+
+### Step-by-Step Setup
+
+```bash
+# 1. Fork the repo on GitHub (click "Fork" top-right)
+
+# 2. Clone YOUR fork
+git clone https://github.com/YOUR_USERNAME/orchids-curecoders.git
+
+# 3. Enter the project
+cd orchids-curecoders
+
+# 4. Install dependencies
+npm install
+
+# 5. (Optional) Create your env file if you wire real providers
+cp .env.example .env 2>/dev/null || true
+
+# 6. Start the dev server
+npm run dev
+```
+
+🎉 Open **http://localhost:3000** and start exploring.
+
+---
+
+## 🐛 Found a Bug? Report It!
+
+| Step | What to Do |
+|---|---|
+| 1️⃣ | Go to **Issues → New Issue → Bug Report** |
+| 2️⃣ | Describe what happened vs. what you expected |
+| 3️⃣ | Share browser, OS, and reproduction steps |
+| 4️⃣ | Add screenshots or short screen recordings 📸 |
+
+> Include the query you ran, the agent involved, and any console errors.
+
+---
+
+## 💡 Have an Idea? Suggest It!
+
+| Step | What to Do |
+|---|---|
+| 1️⃣ | Go to **Issues → New Issue → Feature Request** |
+| 2️⃣ | Explain the feature and who benefits |
+| 3️⃣ | Bonus: link to a real-world pharma workflow it improves 🧬 |
+
+---
+
+## 💻 Writing Code
+
+### The 6-Step Process
+
+```
+🍴 Fork  →  🌿 Branch  →  ✏️ Code  →  🧪 Test  →  💾 Commit  →  🔄 PR
+```
+
+```bash
+# 1. Sync main
+git checkout main
+git pull origin main
+
+# 2. Create a feature branch
+git checkout -b feature/your-feature-name
+# Examples:
+#   git checkout -b feature/patent-cliff-heatmap
+#   git checkout -b fix/excel-export-encoding
+#   git checkout -b docs/agent-architecture-diagram
+
+# 3. Make your changes
+
+# 4. Lint & build locally
+npm run lint
+npm run build
+
+# 5. Commit (see rules below)
+git add .
+git commit -m "feat: add patent cliff heatmap to market view"
+
+# 6. Push and open a PR
+git push origin feature/your-feature-name
+```
+
+---
+
+## 📝 Commit Message Rules
+
+We follow **[Conventional Commits](https://www.conventionalcommits.org/)**.
+
+| Prefix | When to Use | Example |
+|---|---|---|
+| `feat:` | ✨ New feature | `feat: add competitor share-of-voice chart` |
+| `fix:` | 🐛 Bug fix | `fix: PDF export drops the second page` |
+| `docs:` | 📖 Documentation | `docs: document the 7-agent architecture` |
+| `style:` | 🎨 Formatting only | `style: align query suggestion chips` |
+| `refactor:` | ♻️ Code cleanup | `refactor: extract agent runner hook` |
+| `test:` | 🧪 Adding tests | `test: cover patent expiry filter logic` |
+| `chore:` | 🔧 Build / CI | `chore: bump tanstack-start to latest` |
+
+### ✅ Good
+```
+feat: stream Master Agent results token-by-token
+fix: sample PPT slide 3 missing chart legend
+docs: add /apis catalog screenshot to README
+```
+
+### ❌ Bad
+```
+update
+fix stuff
+asdfgh
+```
+
+---
+
+## 🎨 Code Style Guide
+
+| Rule | Details |
+|---|---|
+| 📘 **Language** | TypeScript strict mode — no `any` |
+| ⚛️ **Components** | React 19 functional components with hooks |
+| 🧭 **Routing** | TanStack Start file-based routes in `src/routes/` |
+| 🎨 **Styling** | Tailwind v4 + semantic tokens from `src/styles.css` |
+| 📁 **Naming** | PascalCase components, camelCase functions |
+| 📦 **Imports** | Use `@/` path aliases |
+| 🚫 **Colors** | Never raw `text-white` — use tokens like `text-foreground` |
+| 🧩 **Components** | Small, focused, reusable |
+
+### Example: Good Component
+
+```tsx
+// ✅ Good — semantic tokens, typed props, clean structure
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface AgentCardProps {
+  name: string;
+  status: "idle" | "running" | "done";
+  onRun: () => void;
+}
+
+export const AgentCard = ({ name, status, onRun }: AgentCardProps) => (
+  <Card className="bg-card text-card-foreground">
+    <CardHeader>
+      <CardTitle>{name}</CardTitle>
+    </CardHeader>
+    <CardContent className="flex items-center justify-between">
+      <span className="text-muted-foreground text-sm capitalize">{status}</span>
+      <Button onClick={onRun} disabled={status === "running"}>
+        Run agent
+      </Button>
+    </CardContent>
+  </Card>
+);
+```
+
+---
+
+## 🗄️ Mock Data & API Rules
+
+CureCoders ships with **mock pharmaceutical data** for the demo. When adding
+or editing mock endpoints:
+
+| Rule | Why |
+|---|---|
+| ✅ Validate every payload with **Zod** | Catches schema drift early |
+| ✅ Keep mock data **clearly labeled** as illustrative | Avoids being mistaken for real evidence |
+| ✅ Cite the public source format you mirror (FDA, USPTO, etc.) | Helps future contributors |
+| ✅ Keep response shapes **stable** across versions | Avoids breaking agents downstream |
+| ❌ Never include real patient data, PII, or confidential pharma info | Legal & ethical |
+| ❌ Never claim mock outputs are clinically validated | Misleading users is unsafe |
+
+---
+
+## 🤖 AI Agent & Prompt Rules
+
+| Rule | Why |
+|---|---|
+| ✅ Each agent has a **single, well-scoped role** | Easier to test and reason about |
+| ✅ Prompts stored in **dedicated files**, not inline strings | Easier to review |
+| ✅ Always include a **system instruction** that forbids medical advice | Safety |
+| ✅ Agents must **cite sources** when emitting facts | Provenance |
+| ❌ Don't hardcode model API keys | Use server-side secrets |
+| ❌ Don't merge prompts that produce unverifiable claims | Quality bar |
+
+---
+
+## 🔒 Security Rules
+
+> 🛡️ **SECURITY IS A FIRST-CLASS PRIORITY**
+
+| ✅ DO | ❌ DON'T |
+|---|---|
+| Use environment variables for secrets | Hardcode API keys in source |
+| Validate all server-function inputs with Zod | Trust client-supplied data |
+| Sandbox file parsing on uploads | Pass user files to shell commands |
+| Report vulnerabilities via [SECURITY.md](./SECURITY.md) | Disclose issues publicly first |
+
+🔐 **Found a security issue?** Read [SECURITY.md](./SECURITY.md) for responsible disclosure.
+
+---
+
+## ✅ Pull Request Checklist
+
+Before you submit your PR, make sure:
+
+- [ ] My code follows the project's code style
+- [ ] I tested my changes locally (`npm run dev`)
+- [ ] Lint passes (`npm run lint`)
+- [ ] Build passes (`npm run build`)
+- [ ] No API keys, secrets, or real PII are hardcoded
+- [ ] New mock data is clearly labeled as illustrative
+- [ ] New AI agents include a safety system prompt
+- [ ] I updated docs (README / inline comments) when behavior changed
+- [ ] Screenshots / GIFs added for UI changes
+
+---
+
+## 🏗️ Project Structure
+
+```
+orchids-curecoders/
+├── 📁 public/                    # Static assets
+├── 📁 src/
+│   ├── 📁 components/            # Reusable UI
+│   │   ├── 📁 ui/                # shadcn/ui primitives
+│   │   ├── 📁 agents/            # 🤖 Agent cards & runners
+│   │   ├── 📁 reports/           # 📄 Report renderers
+│   │   └── 📁 layout/            # Header, sidebar, shell
+│   ├── 📁 routes/                # TanStack Start file-based routes
+│   │   ├── __root.tsx            # Root shell
+│   │   ├── index.tsx             # Master Agent Workspace
+│   │   ├── architecture.tsx      # 🏗️ Architecture page
+│   │   ├── samples.tsx           # 📊 Sample outputs
+│   │   ├── apis.tsx              # 🔌 Mock API catalog
+│   │   ├── queries.tsx           # 🔍 Instant queries
+│   │   ├── journey.tsx           # 🚀 Product journey deck
+│   │   └── reports.tsx           # 📄 PDF / Excel exports
+│   ├── 📁 lib/                   # Server functions & utilities
+│   ├── 📁 hooks/                 # Custom React hooks
+│   └── 📁 styles.css             # Tailwind v4 design tokens
+├── 📄 README.md
+├── 📄 LICENSE
+├── 📄 CODE_OF_CONDUCT.md
+├── 📄 CONTRIBUTING.md
+└── 📄 SECURITY.md
+```
+
+---
+
+## ❓ Need Help?
+
+| Channel | Link |
+|---|---|
+| 💬 **Discussions** | [GitHub Discussions](https://github.com/Samrudh2006/orchids-curecoders/discussions) |
+| 🐛 **Bug Reports** | [Create Issue](https://github.com/Samrudh2006/orchids-curecoders/issues/new) |
+| 💡 **Feature Ideas** | [Create Issue](https://github.com/Samrudh2006/orchids-curecoders/issues/new) |
+| 🌐 **Live Demo** | [orchids-curecoders.vercel.app](https://orchids-curecoders.vercel.app/) |
+
+---
+
+**Every contribution helps researchers move faster. Thank you! 🧬**
