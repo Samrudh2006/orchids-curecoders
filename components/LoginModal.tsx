@@ -87,13 +87,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Logo + brand */}
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              {/* Logo — same overflow trick as Header to preserve aspect ratio */}
-              <div className="h-10 w-36 overflow-hidden flex items-center relative flex-shrink-0">
-                <img src="/curecoders-logo.png" alt="CureCoders" className="h-24 max-w-none w-auto absolute" style={{ top: '50%', transform: 'translateY(-50%)' }} />
-              </div>
-            </div>
-            <div className="text-cyan-400 text-xs font-semibold tracking-widest uppercase mt-1">Pharma Intelligence</div>
+            <img
+              src="/curecoders-logo.png"
+              alt="CureCoders"
+              className="mb-1"
+              style={{ width: 200, height: 'auto', filter: 'brightness(0) invert(1)' }}
+            />
           </div>
 
           {/* Headline */}
@@ -146,10 +145,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           </button>
 
           {/* Mobile logo */}
-          <div className="flex md:hidden items-center mb-6">
-            <div className="h-9 w-32 overflow-hidden flex items-center relative flex-shrink-0">
-              <img src="/curecoders-logo.png" alt="CureCoders" className="h-20 max-w-none w-auto absolute" style={{ top: '50%', transform: 'translateY(-50%)' }} />
-            </div>
+          <div className="flex md:hidden mb-5">
+            <img src="/curecoders-logo.png" alt="CureCoders" style={{ width: 160, height: 'auto' }} />
           </div>
 
           {/* Heading */}
