@@ -22,9 +22,7 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="mb-6 flex items-center">
-              <div className="h-16 w-52 overflow-hidden flex items-center justify-start relative">
-                <Logo className="h-36 max-w-none w-auto -ml-4" />
-              </div>
+              <Logo className="h-10 w-auto" />
             </div>
             <p className="text-slate-300 text-sm leading-relaxed max-w-md">
               Empowering pharmaceutical research with AI-driven insights. Accelerating drug discovery 

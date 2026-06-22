@@ -282,10 +282,8 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <div className="h-12 w-40 overflow-hidden flex items-center justify-center relative">
-            <Logo className="h-28 max-w-none w-auto" />
-          </div>
+        <Link to="/" className="flex items-center hover:opacity-90 transition-opacity">
+          <Logo className="h-8.5 w-auto" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1">
@@ -367,30 +365,30 @@ const Header: React.FC<HeaderProps> = ({
           {/* Collaboration */}
           <button
             onClick={onOpenCollaboration}
-            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 hidden sm:block"
+            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-cyan-500/5 hidden sm:flex"
             title="Team Collaboration"
           >
-            <img src="/icon-collab.png" alt="Collaboration" className="w-8 h-8 rounded-xl object-cover" />
+            <Users className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
             <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Team</span>
           </button>
 
           {/* Compare */}
           <button
             onClick={onOpenComparison}
-            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 hidden sm:block"
+            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 hover:border-indigo-200 dark:hover:border-indigo-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-indigo-500/5 hidden sm:flex"
             title="Compare Results"
           >
-            <img src="/icon-compare.png" alt="Compare" className="w-8 h-8 rounded-xl object-cover" />
+            <GitCompare className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
             <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Compare</span>
           </button>
 
           {/* Bookmarks */}
           <button
             onClick={onOpenBookmarks}
-            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200"
+            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-emerald-500/5"
             title="Bookmarks (Ctrl+B)"
           >
-            <img src="/icon-bookmark.png" alt="Bookmarks" className="w-8 h-8 rounded-xl object-cover" />
+            <Bookmark className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
             <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Saved</span>
           </button>
 
@@ -398,10 +396,10 @@ const Header: React.FC<HeaderProps> = ({
           <Link
             to="/history"
             onMouseEnter={() => explainFeature('history')}
-            className={`group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 block`}
+            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 hover:border-amber-200 dark:hover:border-amber-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-amber-500/5"
             aria-label="View history"
           >
-            <img src="/icon-history.png" alt="History" className="w-8 h-8 rounded-xl object-cover" />
+            <History className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
             <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">History</span>
           </Link>
 

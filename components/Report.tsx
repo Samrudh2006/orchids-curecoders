@@ -42,9 +42,7 @@ const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
                 {/* Header */}
                 <div className="flex justify-between items-center pb-4 border-b border-gray-300">
                     <div className="flex items-center">
-                        <div className="h-12 w-40 overflow-hidden flex items-center justify-start relative">
-                            <Logo className="h-28 max-w-none w-auto" />
-                        </div>
+                        <Logo className="h-9 w-auto" />
                     </div>
                     <div className="text-right">
                         <h1 className="text-2xl font-bold font-display text-gray-800">AI Research Report</h1>
