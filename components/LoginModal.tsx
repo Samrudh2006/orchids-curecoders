@@ -88,10 +88,9 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           {/* Logo + brand */}
           <div className="relative z-10">
             <img
-              src="/curecoders-logo.png"
+              src="/cc-logo-dark.png"
               alt="CureCoders"
-              className="mb-1"
-              style={{ width: 200, height: 'auto', filter: 'brightness(0) invert(1)' }}
+              style={{ width: 220, height: 'auto', maxHeight: 72, objectFit: 'contain' }}
             />
           </div>
 
@@ -123,6 +122,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           {/* Trust badge */}
           <div className="relative z-10">
             <div className="flex items-center gap-2 bg-white/8 border border-white/10 rounded-xl px-3 py-2.5">
+              <img src="/cc-icon.png" alt="" className="w-7 h-7 rounded-lg object-contain flex-shrink-0" />
               <div className="flex -space-x-1.5">
                 {['SC','MT','EW','JP'].map(i => (
                   <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-[8px] font-bold text-white border border-white/20">{i[0]}</div>
@@ -146,7 +146,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Mobile logo */}
           <div className="flex md:hidden mb-5">
-            <img src="/curecoders-logo.png" alt="CureCoders" style={{ width: 160, height: 'auto' }} />
+            <img src="/cc-logo-light.png" alt="CureCoders" style={{ width: 180, height: 'auto', maxHeight: 56, objectFit: 'contain' }} />
           </div>
 
           {/* Heading */}
