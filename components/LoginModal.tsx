@@ -87,15 +87,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Logo + brand */}
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/10 flex items-center justify-center border border-white/20 shadow-lg">
-                <img src="/curecoders-logo.png" alt="CureCoders" className="w-10 h-10 object-contain" />
-              </div>
-              <div>
-                <div className="text-white font-black text-xl tracking-tight leading-none">CureCoders</div>
-                <div className="text-cyan-400 text-xs font-semibold tracking-widest uppercase">Pharma Intelligence</div>
+            <div className="flex items-center gap-2 mb-2">
+              {/* Logo — same overflow trick as Header to preserve aspect ratio */}
+              <div className="h-10 w-36 overflow-hidden flex items-center relative flex-shrink-0">
+                <img src="/curecoders-logo.png" alt="CureCoders" className="h-24 max-w-none w-auto absolute" style={{ top: '50%', transform: 'translateY(-50%)' }} />
               </div>
             </div>
+            <div className="text-cyan-400 text-xs font-semibold tracking-widest uppercase mt-1">Pharma Intelligence</div>
           </div>
 
           {/* Headline */}
@@ -148,9 +146,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           </button>
 
           {/* Mobile logo */}
-          <div className="flex md:hidden items-center gap-2 mb-6">
-            <img src="/curecoders-logo.png" alt="CureCoders" className="w-8 h-8 object-contain" />
-            <span className="font-black text-lg text-slate-800 dark:text-white">CureCoders</span>
+          <div className="flex md:hidden items-center mb-6">
+            <div className="h-9 w-32 overflow-hidden flex items-center relative flex-shrink-0">
+              <img src="/curecoders-logo.png" alt="CureCoders" className="h-20 max-w-none w-auto absolute" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
           </div>
 
           {/* Heading */}
