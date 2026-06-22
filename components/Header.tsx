@@ -364,41 +364,45 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
+          {/* Collaboration */}
           <button
             onClick={onOpenCollaboration}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors hidden sm:block"
+            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 hidden sm:block"
             title="Team Collaboration"
           >
-            <Users className="w-5 h-5" />
+            <img src="/icon-collab.png" alt="Collaboration" className="w-8 h-8 rounded-xl object-cover" />
+            <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Team</span>
           </button>
 
+          {/* Compare */}
           <button
             onClick={onOpenComparison}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors hidden sm:block"
+            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 hidden sm:block"
             title="Compare Results"
           >
-            <GitCompare className="w-5 h-5" />
+            <img src="/icon-compare.png" alt="Compare" className="w-8 h-8 rounded-xl object-cover" />
+            <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Compare</span>
           </button>
 
+          {/* Bookmarks */}
           <button
             onClick={onOpenBookmarks}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+            className="group relative p-1 rounded-xl hover:scale-110 transition-all duration-200"
             title="Bookmarks (Ctrl+B)"
           >
-            <Bookmark className="w-5 h-5" />
+            <img src="/icon-bookmark.png" alt="Bookmarks" className="w-8 h-8 rounded-xl object-cover" />
+            <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Saved</span>
           </button>
 
+          {/* History */}
           <Link
             to="/history"
             onMouseEnter={() => explainFeature('history')}
-            className={`p-2 rounded-lg transition-colors ${
-              location.pathname === '/history'
-                ? 'bg-primary/10 text-primary'
-                : 'text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
-            }`}
+            className={`group relative p-1 rounded-xl hover:scale-110 transition-all duration-200 block`}
             aria-label="View history"
           >
-            <History className="w-5 h-5" />
+            <img src="/icon-history.png" alt="History" className="w-8 h-8 rounded-xl object-cover" />
+            <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">History</span>
           </Link>
 
           <Link
