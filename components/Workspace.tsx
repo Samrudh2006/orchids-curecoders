@@ -1093,7 +1093,7 @@ const Workspace = () => {
                                             onClick={() => setShowAllPrompts(!showAllPrompts)}
                                             className="flex items-center gap-2 mx-auto text-sm font-semibold text-primary hover:underline"
                                         >
-                                            {showAllPrompts ? 'Show Fewer Queries' : 'Show All 30+ Queries'}
+                                            {showAllPrompts ? 'Show Fewer Queries' : `Show All ${QUICK_PROMPTS.length} Queries`}
                                             <ChevronDown className={`w-4 h-4 transition-transform ${showAllPrompts ? 'rotate-180' : ''}`} />
                                         </button>
                                     </div>
