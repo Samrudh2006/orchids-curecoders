@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Sparkles, Settings, Mic, MicOff, Trash2 } from './Icons';
 import { useVoiceAssistant } from '../context/VoiceAssistantContext';
+import RichChatRenderer from './RichChatRenderer';
 
 interface Message {
   id: string;
@@ -218,9 +219,11 @@ Provide a helpful, concise response. If it's about the platform, use the context
         onClick={() => setIsOpen(true)}
         className="flex items-center justify-center gap-3 w-full py-4 px-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
       >
-        <div className="relative">
-          <Bot className="w-6 h-6" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white"></div>
+        <div className="relative flex-shrink-0">
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 bg-white">
+            <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+          </div>
+          <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white"></div>
         </div>
         <span className="text-lg">AI Chat Assistant</span>
         <MessageCircle className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -237,8 +240,8 @@ Provide a helpful, concise response. If it's about the platform, use the context
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30">
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl shadow-lg">
-                    <Bot className="w-7 h-7 text-white" />
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl overflow-hidden border border-teal-500 bg-white shadow-lg">
+                    <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></div>
                 </div>
@@ -282,18 +285,24 @@ Provide a helpful, concise response. If it's about the platform, use the context
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-[85%] ${message.sender === 'user' ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-md border border-slate-100 dark:border-slate-700'} rounded-2xl px-4 py-3`}>
-                    <div className="flex items-start space-x-2">
+                    <div className="flex items-start space-x-3">
                       {message.sender === 'bot' && (
-                        <Bot className="w-5 h-5 mt-0.5 text-teal-500 flex-shrink-0" />
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 mt-0.5 shadow-sm">
+                          <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+                        </div>
                       )}
                       {message.sender === 'user' && (
-                        <User className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <User className="w-5 h-5 mt-1 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {message.content}
-                        </div>
-                        <div className={`text-xs mt-2 ${message.sender === 'user' ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'}`}>
+                        {message.sender === 'bot' ? (
+                          <RichChatRenderer content={message.content} />
+                        ) : (
+                          <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                            {message.content}
+                          </div>
+                        )}
+                        <div className={`text-xs mt-2.5 ${message.sender === 'user' ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'}`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
@@ -305,8 +314,10 @@ Provide a helpful, concise response. If it's about the platform, use the context
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl px-4 py-3 shadow-md border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center space-x-2">
-                      <Bot className="w-5 h-5 text-teal-500" />
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 shadow-sm">
+                        <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+                      </div>
                       <div className="flex space-x-1.5">
                         <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce"></div>
                         <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>

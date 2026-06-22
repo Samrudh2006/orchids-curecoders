@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, GitCompare, Plus, Trash2, ChevronDown, BarChart, FileText, Microscope, Calendar } from './Icons';
+import getApiUrl, { getAuthHeaders } from '../services/apiConfig';
+import { useAppContext } from '../hooks/useAppContext';
+import LockedFeatureGate from './LockedFeatureGate';
 
 interface ResearchResult {
   id: string;
@@ -15,22 +18,78 @@ interface ResearchResult {
   clinicalTrialCount?: number;
 }
 
+const mapQueryToResearchResult = (q: any): ResearchResult => {
+  let marketSizeUSD = '';
+  let cagr = '';
+  let therapy = '';
+  let patentCount = 0;
+  let clinicalTrialCount = 0;
+
+  if (q.results && Array.isArray(q.results)) {
+    for (const res of q.results) {
+      if (res.status === 'DONE') {
+        try {
+          const parsed = JSON.parse(res.resultJson);
+          if (res.agentName === 'market_data') {
+            const data = parsed.market_data || parsed;
+            marketSizeUSD = data.marketSizeUSD || '';
+            cagr = data.cagr || '';
+            therapy = data.therapy || '';
+          } else if (res.agentName === 'patents') {
+            const data = parsed.patents || parsed;
+            patentCount = Array.isArray(data) ? data.length : 0;
+          } else if (res.agentName === 'clinical_trials') {
+            const data = parsed.trials || parsed;
+            clinicalTrialCount = Array.isArray(data) ? data.length : 0;
+          }
+        } catch (e) {
+          console.error('Error parsing agent result JSON:', e);
+        }
+      }
+    }
+  }
+
+  return {
+    id: q.id,
+    prompt: q.prompt,
+    timestamp: q.createdAt,
+    summary: q.synthesis,
+    marketData: marketSizeUSD || cagr || therapy ? {
+      marketSizeUSD,
+      cagr,
+      therapy
+    } : undefined,
+    patentCount,
+    clinicalTrialCount
+  };
+};
+
 interface ComparisonToolProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function ComparisonTool({ isOpen, onClose }: ComparisonToolProps) {
+  const { user } = useAppContext();
   const [savedResults, setSavedResults] = useState<ResearchResult[]>([]);
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [showSelector, setShowSelector] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('curecoders_comparison_results');
-    if (saved) {
-      setSavedResults(JSON.parse(saved));
+    if (isOpen && user) {
+      fetch(`${getApiUrl()}/api/history`, {
+        headers: getAuthHeaders()
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const mapped = data.map(mapQueryToResearchResult);
+            setSavedResults(mapped);
+          }
+        })
+        .catch(err => console.error('Error fetching history for comparison:', err));
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const addToComparison = (id: string) => {
     if (selectedResults.length < 3 && !selectedResults.includes(id)) {
@@ -65,21 +124,26 @@ export default function ComparisonTool({ isOpen, onClose }: ComparisonToolProps)
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
-          {selectedResults.length === 0 ? (
-            <div className="text-center py-16">
-              <GitCompare className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-              <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-300 mb-2">No Results Selected</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">Add research results to start comparing</p>
-              <button
-                onClick={() => setShowSelector(true)}
-                className="px-6 py-3 bg-violet-500 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2 mx-auto"
-              >
-                <Plus className="w-5 h-5" />
-                Add Research Result
-              </button>
-            </div>
-          ) : (
+        {!user ? (
+          <div className="flex-1 overflow-auto p-8 flex items-center justify-center">
+            <LockedFeatureGate featureName="Research Comparison Tool" />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto p-6">
+            {selectedResults.length === 0 ? (
+              <div className="text-center py-16">
+                <GitCompare className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-300 mb-2">No Results Selected</h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-6">Add research results to start comparing</p>
+                <button
+                  onClick={() => setShowSelector(true)}
+                  className="px-6 py-3 bg-violet-500 hover:bg-violet-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add Research Result
+                </button>
+              </div>
+            ) : (
             <div className="space-y-6">
               <div className={`grid gap-4 ${selectedResults.length === 1 ? 'grid-cols-1' : selectedResults.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {selectedResults.map((id, index) => {
@@ -166,6 +230,7 @@ export default function ComparisonTool({ isOpen, onClose }: ComparisonToolProps)
             </div>
           )}
         </div>
+      )}
 
         {showSelector && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4">

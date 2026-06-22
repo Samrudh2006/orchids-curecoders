@@ -21,11 +21,9 @@ const Footer = () => {
           
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-3 mb-6">
-              <Logo className="w-12 h-12" />
-              <div>
-                <h3 className="text-2xl font-bold text-white">CureCoders</h3>
-                <p className="text-cyan-300 text-sm font-medium">Pharmaceutical Intelligence Platform</p>
+            <div className="mb-6 flex items-center">
+              <div className="h-16 w-52 overflow-hidden flex items-center justify-start relative">
+                <Logo className="h-36 max-w-none w-auto -ml-4" />
               </div>
             </div>
             <p className="text-slate-300 text-sm leading-relaxed max-w-md">

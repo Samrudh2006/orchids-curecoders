@@ -36,7 +36,7 @@ describe('QueryLimitProvider', () => {
   it('restores stored usage and enforces limits', async () => {
     const today = new Date().toDateString();
     localStorage.setItem('curecoders_query_data', JSON.stringify({
-      queries: 4,
+      queries: 2,
       plan: 'free',
       resetDate: today
     }));
@@ -48,7 +48,7 @@ describe('QueryLimitProvider', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('used')).toHaveTextContent('4');
+      expect(screen.getByTestId('used')).toHaveTextContent('2');
     });
 
     expect(screen.getByTestId('remaining')).toHaveTextContent('1');
@@ -57,7 +57,7 @@ describe('QueryLimitProvider', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /increment/i }));
 
-    expect(screen.getByTestId('used')).toHaveTextContent('5');
+    expect(screen.getByTestId('used')).toHaveTextContent('3');
     expect(screen.getByTestId('remaining')).toHaveTextContent('0');
     expect(screen.getByTestId('can-query')).toHaveTextContent('no');
   });

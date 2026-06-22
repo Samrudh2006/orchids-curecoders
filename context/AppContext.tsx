@@ -1,7 +1,9 @@
-import React, { createContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { Agent, AgentName, AgentStatus, AgentResultData, AgentError, ChatMessage } from '../types';
 import * as geminiService from '../services/geminiService';
 import { useVoiceAssistant } from './VoiceAssistantContext';
+import { getApiUrl, getAuthHeaders } from '../services/apiConfig';
+import { useQueryLimit } from './QueryLimitContext';
 
 interface SearchHistoryItem {
     id: string;
@@ -24,11 +26,18 @@ interface AppContextType {
     chatHistory: ChatMessage[];
     isChatting: boolean;
     sendChatMessage: (message: string) => void;
+    queryId: string | null;
+    token: string | null;
+    user: { email: string } | null;
+    login: (token: string, user: { email: string }) => void;
+    logout: () => void;
+    loadSearchHistory: () => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { canQuery, incrementQuery } = useQueryLimit();
     const [prompt, setPrompt] = useState('');
     const [currentRunPrompt, setCurrentRunPrompt] = useState('');
     const [agents, setAgents] = useState<Agent[]>([]);
@@ -37,20 +46,88 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [isReportReady, setIsReportReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>(() => {
-        const stored = localStorage.getItem('searchHistoryDetailed');
-        if (stored) {
-            const detailed = JSON.parse(stored);
-            return detailed.slice(0, 5).map((item: any) => ({ id: item.id, prompt: item.prompt }));
-        }
-        return [];
-    });
+    const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isChatting, setIsChatting] = useState(false);
+    const [queryId, setQueryId] = useState<string | null>(null);
 
+    // Auth States
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem('curecoders_auth_token'));
+    const [user, setUser] = useState<{ email: string } | null>(() => {
+        const stored = localStorage.getItem('curecoders_user');
+        return stored ? JSON.parse(stored) : null;
+    });
+
+    const login = (newToken: string, newUser: { email: string }) => {
+        localStorage.setItem('curecoders_auth_token', newToken);
+        localStorage.setItem('curecoders_user', JSON.stringify(newUser));
+        setToken(newToken);
+        setUser(newUser);
+        window.dispatchEvent(new CustomEvent('auth-change'));
+    };
+
+    const logout = () => {
+        localStorage.removeItem('curecoders_auth_token');
+        localStorage.removeItem('curecoders_user');
+        setToken(null);
+        setUser(null);
+        setSearchHistory([]);
+        window.dispatchEvent(new CustomEvent('auth-change'));
+    };
+
+    const loadSearchHistory = useCallback(async () => {
+        try {
+            const response = await fetch(`${getApiUrl()}/api/history`, {
+                headers: getAuthHeaders()
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    setSearchHistory(data.slice(0, 5).map((item: any) => ({ id: item.id, prompt: item.prompt })));
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load search history from DB:", err);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        loadSearchHistory();
+    }, [loadSearchHistory]);
+
+    const handleSetUploadedFile = useCallback(async (file: File | null) => {
+        setUploadedFile(file);
+        if (file) {
+            console.log("Uploading file to backend for RAG indexing...");
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(`${getApiUrl()}/api/upload`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: formData
+                });
+                if (response.ok) {
+                    console.log("File uploaded and indexed successfully on the backend!");
+                } else {
+                    console.error("Backend file upload failed.");
+                }
+            } catch (err) {
+                console.error("Error uploading file to backend:", err);
+            }
+        }
+    }, []);
 
     const runMasterAgent = useCallback(async (currentPrompt: string) => {
         if (!currentPrompt.trim() || isOrchestrating) return;
+
+        // Check query limit for guest users
+        if (!localStorage.getItem('curecoders_auth_token')) {
+            if (!canQuery) {
+                setError("out.of.free.queries");
+                return;
+            }
+        }
 
         setIsOrchestrating(true);
         setIsReportReady(false);
@@ -106,7 +183,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 }
             }
 
-
             let finalSummary = '';
 
             if (successfulResults.length > 0) {
@@ -129,19 +205,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
                 setIsReportReady(true);
 
-                const historyItem = {
-                    id: new Date().toISOString(),
-                    prompt: currentPrompt,
-                    summary: finalSummary,
-                    timestamp: new Date().toISOString(),
-                    agentCount: successfulResults.length
-                };
+                // Save results to backend DB
+                const savedQueryId = await geminiService.saveQueryResults(
+                    currentPrompt,
+                    finalSummary,
+                    requiredAgentNames,
+                    successfulResults
+                );
+                setQueryId(savedQueryId);
 
-                const detailedHistory = JSON.parse(localStorage.getItem('searchHistoryDetailed') || '[]');
-                const updatedDetailed = [historyItem, ...detailedHistory.filter((item: any) => item.prompt !== currentPrompt)];
-                localStorage.setItem('searchHistoryDetailed', JSON.stringify(updatedDetailed));
+                // Increment free query limit counter for guests
+                if (!localStorage.getItem('curecoders_auth_token')) {
+                    incrementQuery();
+                }
 
-                setSearchHistory(prev => [{ id: historyItem.id, prompt: currentPrompt }, ...prev.filter(item => item.prompt !== currentPrompt)].slice(0, 5));
+                // Refresh history list
+                loadSearchHistory();
             } else {
                 setError("All agents failed to produce results.");
             }
@@ -157,7 +236,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } finally {
             setIsOrchestrating(false);
         }
-    }, [isOrchestrating, uploadedFile]);
+    }, [isOrchestrating, uploadedFile, canQuery, loadSearchHistory]);
     
     const sendChatMessage = useCallback(async (message: string) => {
         if (!message.trim() || isChatting) return;
@@ -179,7 +258,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [isChatting]);
 
-
     const value = {
         prompt,
         setPrompt,
@@ -190,12 +268,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isReportReady,
         error,
         uploadedFile,
-        setUploadedFile,
+        setUploadedFile: handleSetUploadedFile,
         searchHistory,
         runMasterAgent,
         chatHistory,
         isChatting,
         sendChatMessage,
+        queryId,
+        token,
+        user,
+        login,
+        logout,
+        loadSearchHistory
     };
 
     return (

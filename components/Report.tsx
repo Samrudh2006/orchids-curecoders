@@ -41,11 +41,9 @@ const Report: React.FC<ReportProps> = ({ prompt, summary, agents }) => {
             <div className="relative" style={{ zIndex: 1 }}>
                 {/* Header */}
                 <div className="flex justify-between items-center pb-4 border-b border-gray-300">
-                    <div className="flex items-center space-x-3">
-                        <Logo className="w-12 h-12" />
-                        <div>
-                            <span className="font-display font-bold text-2xl text-slate-800">CureCoders</span>
-                            <p className="text-xs text-gray-500">Smart Care, Powered by AI</p>
+                    <div className="flex items-center">
+                        <div className="h-12 w-40 overflow-hidden flex items-center justify-start relative">
+                            <Logo className="h-28 max-w-none w-auto" />
                         </div>
                     </div>
                     <div className="text-right">

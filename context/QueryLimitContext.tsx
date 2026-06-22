@@ -16,20 +16,36 @@ interface QueryLimitContextType {
 const QueryLimitContext = createContext<QueryLimitContextType | undefined>(undefined);
 
 const PLAN_LIMITS = {
-  free: 5,
-  pro: 50,
-  enterprise: 500
+  free: 3,
+  pro: 999999,
+  enterprise: 999999
 };
 
 export function QueryLimitProvider({ children }: { children: ReactNode }) {
   const [queriesUsed, setQueriesUsed] = useState(0);
-  const [planType, setPlanType] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [lastResetDate, setLastResetDate] = useState<string>('');
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('curecoders_auth_token');
+      setIsLoggedIn(!!token);
+    };
+    
+    checkAuth();
+    
+    window.addEventListener('auth-change', checkAuth);
+    window.addEventListener('storage', checkAuth);
+    return () => {
+      window.removeEventListener('auth-change', checkAuth);
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   useEffect(() => {
     const savedData = localStorage.getItem('curecoders_query_data');
     if (savedData) {
-      const { queries, plan, resetDate } = JSON.parse(savedData);
+      const { queries, resetDate } = JSON.parse(savedData);
       const today = new Date().toDateString();
       
       if (resetDate !== today) {
@@ -39,7 +55,6 @@ export function QueryLimitProvider({ children }: { children: ReactNode }) {
         setQueriesUsed(queries);
         setLastResetDate(resetDate);
       }
-      setPlanType(plan || 'free');
     } else {
       setLastResetDate(new Date().toDateString());
     }
@@ -48,21 +63,24 @@ export function QueryLimitProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('curecoders_query_data', JSON.stringify({
       queries: queriesUsed,
-      plan: planType,
       resetDate: lastResetDate
     }));
-  }, [queriesUsed, planType, lastResetDate]);
+  }, [queriesUsed, lastResetDate]);
 
+  const planType = isLoggedIn ? 'pro' : 'free';
   const queryLimit = PLAN_LIMITS[planType];
-  const isPremium = planType !== 'free';
-  const canQuery = queriesUsed < queryLimit;
+  const isPremium = isLoggedIn;
+  const canQuery = planType === 'free' ? (queriesUsed < queryLimit) : true;
 
   const incrementQuery = () => {
-    if (canQuery) {
-      setQueriesUsed(prev => prev + 1);
-      return true;
+    if (planType === 'free') {
+      if (queriesUsed < queryLimit) {
+        setQueriesUsed(prev => prev + 1);
+        return true;
+      }
+      return false;
     }
-    return false;
+    return true;
   };
 
   const resetQueries = () => {
@@ -71,10 +89,15 @@ export function QueryLimitProvider({ children }: { children: ReactNode }) {
   };
 
   const setPlan = (plan: 'free' | 'pro' | 'enterprise') => {
-    setPlanType(plan);
+    // Left for backward compatibility
   };
 
-  const getRemainingQueries = () => queryLimit - queriesUsed;
+  const getRemainingQueries = () => {
+    if (planType === 'free') {
+      return Math.max(0, queryLimit - queriesUsed);
+    }
+    return 999999;
+  };
 
   const getResetTime = () => {
     const now = new Date();

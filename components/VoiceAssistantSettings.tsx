@@ -15,11 +15,11 @@ const VoiceAssistantSettings: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [preferences, setPreferences] = useState<VoicePreferences>({
-    generalGuidance: true,
-    featureExplanations: true,
+    generalGuidance: false,
+    featureExplanations: false,
     agentProgress: true,
     chartNarration: true,
-    welcomeMessages: true,
+    welcomeMessages: false,
   });
 
   useEffect(() => {

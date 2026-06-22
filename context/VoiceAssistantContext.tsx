@@ -77,7 +77,8 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
   const speak = useCallback((text: string, options: SpeechOptions = {}) => {
     if (!isEnabled || !synth) return;
 
-    if (options.interrupt) {
+    // Cancel previous speech by default to prevent queue stalling and delay issues
+    if (options.interrupt !== false) {
       synth.cancel();
     }
 
@@ -114,19 +115,38 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     utterance.pitch = options.pitch || 1.0; // Professional tone
     utterance.volume = options.volume || 0.8; // Clear audibility
 
-    // Advanced voice selection with pharmaceutical preference
+    // Advanced voice selection prioritizing female/woman voices
     const voices = synth.getVoices();
+    
+    // Filter all English-speaking voices
+    const englishVoices = voices.filter(voice => 
+      voice.lang.toLowerCase().includes('en-us') || 
+      voice.lang.toLowerCase().includes('en-gb') ||
+      voice.lang.toLowerCase().includes('en-in') ||
+      voice.lang.toLowerCase().includes('en-ca') ||
+      voice.lang.toLowerCase().includes('en-au')
+    );
+
+    // Prioritize female voices in English
+    const femaleEnglishVoices = englishVoices.filter(voice => {
+      const name = voice.name.toLowerCase();
+      return name.includes('female') || 
+             name.includes('zira') || 
+             name.includes('karen') || 
+             name.includes('samantha') || 
+             name.includes('hazel') || 
+             name.includes('susan') || 
+             name.includes('heera') || 
+             name.includes('fiona') || 
+             name.includes('veena') ||
+             name.includes('google uk english female') ||
+             name.includes('google us english female') ||
+             name.includes('natural');
+    });
+
     const preferredVoices = [
-      // Premium voices for pharmaceutical content
-      voices.find(voice => voice.name.includes('Google UK English Female')),
-      voices.find(voice => voice.name.includes('Microsoft Zira Desktop')),
-      voices.find(voice => voice.name.includes('Karen')),
-      voices.find(voice => voice.name.includes('Samantha')),
-      voices.find(voice => voice.name.includes('Fiona')),
-      // Fallback to quality English voices
-      ...voices.filter(voice => 
-        voice.lang.includes('en-US') || voice.lang.includes('en-GB')
-      ).slice(0, 3)
+      ...femaleEnglishVoices,
+      ...englishVoices.filter(voice => !voice.name.toLowerCase().includes('male'))
     ].filter(Boolean);
     
     if (preferredVoices.length > 0) {

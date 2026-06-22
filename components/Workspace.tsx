@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AgentName, AgentStatus } from '../types';
 import { QUICK_PROMPTS } from '../constants';
 import AgentCard from './AgentCard';
@@ -10,6 +11,7 @@ import { useAppContext } from '../hooks/useAppContext';
 import { useVoiceFeatures } from '../hooks/useVoiceFeatures';
 import DocumentManager from './DocumentManager';
 import DragDropUpload from './DragDropUpload';
+import getApiUrl from '../services/apiConfig';
 
 const Workspace = () => {
     const {
@@ -23,6 +25,7 @@ const Workspace = () => {
         setUploadedFile,
         runMasterAgent,
         searchHistory,
+        queryId,
     } = useAppContext();
 
     const {
@@ -571,6 +574,11 @@ const Workspace = () => {
     };
 
     const handleExportExcel = () => {
+        if (queryId) {
+            window.open(`${getApiUrl()}/api/reports/excel?queryId=${queryId}`);
+            return;
+        }
+
         const XLSX = window.XLSX;
 
         if (!XLSX) {
@@ -707,6 +715,11 @@ const Workspace = () => {
     };
 
     const handleExportPpt = () => {
+        if (queryId) {
+            window.open(`${getApiUrl()}/api/reports/pptx?queryId=${queryId}`);
+            return;
+        }
+
         const PptxGenJS = window.PptxGenJS;
 
         console.log("PowerPoint export attempt:", {
@@ -1115,9 +1128,33 @@ const Workspace = () => {
 
 
                 {error && (
-                    <div className="mt-8 p-4 bg-red-100 dark:bg-red-900/50 border border-red-400 text-red-700 dark:text-red-300 rounded-lg">
-                        <strong>Error:</strong> {error}
-                    </div>
+                    error === 'out.of.free.queries' ? (
+                        <div className="mt-8 p-8 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl text-center shadow-lg animate-[fadeIn_0.3s_ease-in-out]">
+                            <div className="text-4xl mb-3">🔒</div>
+                            <h4 className="text-xl font-bold text-slate-800 dark:text-white">Out of Free Queries</h4>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto">
+                                You have used all 3 free trial queries. Please sign up or log in to get unlimited access to our autonomous AI agents and intelligence reports!
+                            </p>
+                            <div className="mt-6 flex justify-center gap-3">
+                                <button
+                                    onClick={() => window.dispatchEvent(new CustomEvent('open-login'))}
+                                    className="px-5 py-2.5 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg shadow-md transition-all"
+                                >
+                                    Log In / Sign Up
+                                </button>
+                                <Link
+                                    to="/payment"
+                                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                                >
+                                    View Plans
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mt-8 p-4 bg-red-100 dark:bg-red-900/50 border border-red-400 text-red-700 dark:text-red-300 rounded-lg">
+                            <strong>Error:</strong> {error}
+                        </div>
+                    )
                 )}
 
                 {isOrchestrating && agents.length > 0 && (

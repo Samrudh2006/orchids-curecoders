@@ -1,24 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
-import { Send, BrainCircuit } from './Icons';
+import { Send } from './Icons';
 import { Spinner } from './Spinner';
+import RichChatRenderer from './RichChatRenderer';
 
 interface ChatAnalysisProps {
     history: ChatMessage[];
     isChatting: boolean;
     onSendMessage: (message: string) => void;
 }
-
-const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-    const htmlContent = content
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-sm">$1</code>')
-        .replace(/(\r\n|\n\r|\r|\n)/g, '<br />');
-
-    return <div className="prose prose-sm prose-slate dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
-};
-
 
 const ChatAnalysis: React.FC<ChatAnalysisProps> = ({ history, isChatting, onSendMessage }) => {
     const [input, setInput] = useState('');
@@ -46,19 +36,23 @@ const ChatAnalysis: React.FC<ChatAnalysisProps> = ({ history, isChatting, onSend
                 {history.map((msg) => (
                     <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                         {msg.sender === 'ai' && (
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                <BrainCircuit className="w-5 h-5 text-primary" />
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 shadow-sm shrink-0">
+                                <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
                             </div>
                         )}
                         <div className={`max-w-md p-3 rounded-xl ${msg.sender === 'ai' ? 'bg-white dark:bg-slate-700' : 'bg-primary text-white'}`}>
-                            <MarkdownRenderer content={msg.text} />
+                            {msg.sender === 'ai' ? (
+                                <RichChatRenderer content={msg.text} />
+                            ) : (
+                                <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</div>
+                            )}
                         </div>
                     </div>
                 ))}
                 {isChatting && (
                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                            <BrainCircuit className="w-5 h-5 text-primary" />
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 shadow-sm shrink-0">
+                            <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
                         </div>
                         <div className="max-w-md p-3 rounded-xl bg-white dark:bg-slate-700">
                             <Spinner className="w-5 h-5 text-primary" />

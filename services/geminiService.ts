@@ -1,15 +1,7 @@
-import { GoogleGenAI, Type, GenerateContentResponse, Chat } from "@google/genai";
 import { AgentName, AgentResultData } from "../types";
+import { getApiUrl, getAuthHeaders } from "./apiConfig";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-    console.warn("Gemini API key not found. Using mock data. Please set the API_KEY environment variable.");
-}
-
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
-let chatSession: Chat | null = null;
+const BACKEND_URL = getApiUrl();
 
 // Custom error for better feedback
 class AgentError extends Error {
@@ -21,162 +13,46 @@ class AgentError extends Error {
     }
 }
 
-const MOCK_DELAY = 1000;
-
-const mockDecomposition = (prompt: string): Promise<AgentName[]> => {
-    console.log("Using mock decomposition for prompt:", prompt);
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const agents = [
-                AgentName.MARKET_DATA,
-                AgentName.PATENTS,
-                AgentName.CLINICAL,
-                AgentName.WEB,
-                AgentName.EXIM,
-            ];
-            resolve(agents);
-        }, MOCK_DELAY);
-    });
-};
-
-const mockGenerateAgentData = (agentName: AgentName, prompt: string, fileContext?: string): Promise<AgentResultData> => {
-    console.log(`Using mock data for agent: ${agentName}`);
-    return new Promise(resolve => {
-        setTimeout(() => {
-            let data: AgentResultData = {};
-            switch (agentName) {
-                case AgentName.MARKET_DATA:
-                    data = {
-                        [AgentName.MARKET_DATA]: {
-                            therapy: "Obesity",
-                            molecule: "GLP-1 Agonist",
-                            marketSizeUSD: "90B",
-                            cagr: "12.5%",
-                            topCompetitors: [{ name: "Novo Nordisk", share: "55%" }, { name: "Eli Lilly", share: "38%" }, { name: "Amgen", share: "3%" }, { name: "Other", share: "4%" }],
-                            insights: "Market dominated by two key players, but new entrants are targeting novel mechanisms.",
-                            marketGrowth: [
-                                { year: 2021, sizeB: 65 },
-                                { year: 2022, sizeB: 74 },
-                                { year: 2023, sizeB: 82 },
-                                { year: 2024, sizeB: 90 },
-                            ]
-                        }
-                    };
-                    break;
-                case AgentName.PATENTS:
-                    data = {
-                        [AgentName.PATENTS]: {
-                            patents: [
-                                { title: "Oral delivery system for incretin-based", url: "#", expiryDate: "2041-07-01", owner: "Innovate MedTech", ftRisk: "High" },
-                                { title: "Method of treating obesity with GLP-1", url: "#", expiryDate: "2035-08-22", owner: "Global Pharma", ftRisk: "Medium" },
-                                { title: "Novel long-acting GLP-1 receptor agonist", url: "#", expiryDate: "2043-11-15", owner: "Global Pharma Inc.", ftRisk: "Low" },
-                                { title: "Combination therapy of GLP-1 & amylin analogue", url: "#", expiryDate: "2045-03-20", owner: "BioGenix Therapeutics", ftRisk: "Low" }
-                            ]
-                        }
-                    };
-                    break;
-                case AgentName.CLINICAL:
-                    data = {
-                        [AgentName.CLINICAL]: {
-                            trials: [
-                                { id: "NCT05001234", title: "Safety & Efficacy of AGP-101 in Adults with Obesity", phase: "1/2a", status: "Recruiting", sponsor: "Agility Pharma" },
-                                { id: "NCT05005678", title: "Efficacy & Safety of AGP-101 vs Placebo", phase: "2b", status: "Active, not recruiting", sponsor: "Agility Pharma" },
-                                { id: "NCT05009012", title: "Long-Term Efficacy & Cardiovascular Safety", phase: "3", status: "Planned", sponsor: "Agility Pharma" }
-                            ]
-                        }
-                    };
-                    break;
-                case AgentName.WEB:
-                    data = {
-                        [AgentName.WEB]: {
-                            webSignals: [
-                                { title: "New study highlights cardiovascular benefits of GLP-1 agonists", url: "#", source: "CardioMetabolic Journal", excerpt: "A recent meta-analysis confirms significant cardiovascular risk reduction...", sentiment: 0.9 },
-                                { title: "Competitor announces promising results for novel oral GLP-1", url: "#", source: "BioPharma Dive", excerpt: "Innovate MedTech's latest trial data shows competitive efficacy...", sentiment: 0.5 },
-                                { title: "Regulatory concerns raised over long-term side effects", url: "#", source: "Regulatory Affairs Pro", excerpt: "Health authorities are requesting additional post-market surveillance data...", sentiment: 0.2 }
-                            ]
-                        }
-                    };
-                    break;
-                case AgentName.EXIM:
-                    data = { [AgentName.EXIM]: { apiName: "Semaglutide", exportVolumes: [{ country: "Denmark", value: "USD 8B" }, { country: "USA", value: "USD 2B" }], importDependency: "Low", topSourcingCountries: [{ country: "Denmark", share: "85%" }] } };
-                    break;
-                case AgentName.INTERNAL:
-                    data = { [AgentName.INTERNAL]: { summary: ["Q3 internal report highlights GLP-1 as a high-priority candidate for the metabolic diseases pipeline.", "R&D division has allocated preliminary budget for pre-clinical models.", fileContext || "No file context provided."] } };
-                    break;
-                default:
-                    data = { raw: `Mock data for ${agentName} related to prompt: ${prompt}` };
-            }
-            resolve(data);
-        }, MOCK_DELAY + Math.random() * 1500);
-    });
-};
-
-const mockSynthesizeResults = (results: any, prompt: string): Promise<string> => {
-    console.log("Using mock synthesis for results:", results);
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(`**Executive Summary for ${prompt}:** Based on the analysis, GLP-1 agonists for obesity represent a significant and rapidly growing market, currently dominated by Novo Nordisk and Eli Lilly. The patent landscape indicates opportunities for novel formulations, although key patents remain active. Clinical trial activity is high, focusing on next-generation therapies with improved efficacy and new delivery mechanisms. Web intelligence suggests strong positive sentiment tied to cardiovascular benefits, reinforcing market potential. Supply chain analysis shows a concentration in sourcing from Denmark, a potential risk factor to monitor.`);
-        }, MOCK_DELAY);
-    });
+// In-memory chat history representation
+interface ChatPart {
+    text: string;
+}
+interface ChatMessageObj {
+    role: 'user' | 'model';
+    parts: ChatPart[];
 }
 
-const getJsonFromResponse = (response: GenerateContentResponse): any => {
-    try {
-        const text = response.text.replace(/```json|```/g, "").trim();
-        return JSON.parse(text);
-    } catch (e) {
-        console.error("Failed to parse JSON from Gemini response:", e);
-        console.error("Raw text:", response.text);
-        throw new Error("Invalid JSON response from model.");
-    }
-}
+let chatHistory: ChatMessageObj[] = [];
 
 export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Promise<AgentName[]> => {
-    if (!ai) return mockDecomposition(prompt);
-
-    const availableAgents = Object.values(AgentName).filter(a =>
-        a !== AgentName.DECOMPOSITION &&
-        a !== AgentName.SYNTHESIS &&
-        a !== AgentName.REPORT_GENERATOR
-    );
-    if (!fileUploaded) {
-        const internalAgentIndex = availableAgents.indexOf(AgentName.INTERNAL);
-        if (internalAgentIndex > -1) {
-            availableAgents.splice(internalAgentIndex, 1);
-        }
-    }
-
-    const schema = {
-        type: Type.OBJECT,
-        properties: {
-            agents: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.STRING,
-                    enum: availableAgents,
-                },
-                description: 'List of agent names required to answer the user prompt.'
-            }
-        },
-        required: ['agents']
-    };
-
-    const generationPrompt = `Based on the following user prompt, identify which of the available agents are necessary to formulate a comprehensive response. 
-    Only select from this list of available agents: ${availableAgents.join(', ')}.
-    Prompt: "${prompt}"
-    ${fileUploaded ? "Context: An internal document has also been uploaded by the user. If relevant, you should use the 'Internal Documents' agent to analyze it." : ""}`;
-
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: generationPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
+        const response = await fetch(`${BACKEND_URL}/api/decompose`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
             },
+            body: JSON.stringify({ prompt, fileUploaded })
         });
-        const json = getJsonFromResponse(response);
-        return json.agents as AgentName[];
+        
+        if (!response.ok) {
+            throw new Error(`Decomposition server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Map backend names ('market_data', 'patents', etc.) to frontend AgentName enum
+        return (data.agents || []).map((name: string) => {
+            switch (name) {
+                case 'market_data': return AgentName.MARKET_DATA;
+                case 'patents': return AgentName.PATENTS;
+                case 'clinical_trials': return AgentName.CLINICAL;
+                case 'web_signals': return AgentName.WEB;
+                case 'exim_sourcing': return AgentName.EXIM;
+                case 'internal_documents': return AgentName.INTERNAL;
+                default: return name;
+            }
+        }) as AgentName[];
     } catch (error) {
         console.error("Error in decomposePrompt:", error);
         throw new AgentError(
@@ -186,100 +62,58 @@ export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Pr
     }
 };
 
-// Updated generateAgentData to use secure backend proxy
 export const generateAgentData = async (agentName: AgentName, prompt: string, fileContext?: string): Promise<AgentResultData> => {
-    // If no API key configured on server (we'll detect via 500 or fallback logic), use mock
-    // For now, let's try the server first
-
     try {
-        let schema: any;
-        let generationPrompt: string;
+        // Map AgentName enum to backend names
+        let backendName = agentName as string;
+        if (agentName === AgentName.MARKET_DATA) backendName = 'market_data';
+        else if (agentName === AgentName.PATENTS) backendName = 'patents';
+        else if (agentName === AgentName.CLINICAL) backendName = 'clinical_trials';
+        else if (agentName === AgentName.WEB) backendName = 'web_signals';
+        else if (agentName === AgentName.EXIM) backendName = 'exim_sourcing';
+        else if (agentName === AgentName.INTERNAL) backendName = 'internal_documents';
 
-        switch (agentName) {
-            case AgentName.MARKET_DATA:
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.MARKET_DATA]: { type: Type.OBJECT, properties: { therapy: { type: Type.STRING }, molecule: { type: Type.STRING }, marketSizeUSD: { type: Type.STRING }, cagr: { type: Type.STRING }, topCompetitors: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, share: { type: Type.STRING } } } }, insights: { type: Type.STRING }, marketGrowth: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { year: { type: Type.NUMBER }, sizeB: { type: Type.NUMBER } } } } } } }
-                };
-                generationPrompt = `Generate mock IQVIA market data for the molecule/therapy mentioned in this prompt: "${prompt}". Respond with realistic but fictional data, including at least 3-4 competitors and 4 years of market growth data.`;
-                break;
-            case AgentName.PATENTS:
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.PATENTS]: { type: Type.OBJECT, properties: { patents: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, expiryDate: { type: Type.STRING }, owner: { type: Type.STRING }, ftRisk: { type: Type.STRING, enum: ['Low', 'Medium', 'High'] } } } } } } }
-                };
-                generationPrompt = `Generate a list of 1-4 mock patents related to the prompt: "${prompt}". Include realistic but fictional details. URLs can be "#". Ensure a mix of Low, Medium, and High ftRisk.`;
-                break;
-            case AgentName.CLINICAL:
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.CLINICAL]: { type: Type.OBJECT, properties: { trials: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, title: { type: Type.STRING }, phase: { type: Type.STRING }, status: { type: Type.STRING }, sponsor: { type: Type.STRING } } } } } } }
-                };
-                generationPrompt = `Generate a list of 1-3 mock clinical trials for the molecule/therapy in prompt: "${prompt}". Use fictional NCT IDs.`;
-                break;
-            case AgentName.EXIM:
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.EXIM]: { type: Type.OBJECT, properties: { apiName: { type: Type.STRING }, exportVolumes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, value: { type: Type.STRING } } } }, importDependency: { type: Type.STRING }, topSourcingCountries: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { country: { type: Type.STRING }, share: { type: Type.STRING } } } } } } }
-                };
-                generationPrompt = `Generate mock EXIM trade data for the API/molecule from the prompt: "${prompt}". Create realistic but fictional data.`;
-                break;
-            case AgentName.INTERNAL:
-                if (!fileContext) return { [AgentName.INTERNAL]: { summary: ["No file was provided for analysis."] } };
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.INTERNAL]: { type: Type.OBJECT, properties: { summary: { type: Type.ARRAY, items: { type: Type.STRING } } } } }
-                };
-                generationPrompt = `The user prompt is: "${prompt}". As context, they have uploaded an internal document with the following details: ${fileContext}. Synthesize a few key takeaways from this document as they relate to the user's prompt. Generate a list of 2-3 bullet points.`;
-                break;
-            default: // WEB agent
-                generationPrompt = `Generate 3 mock web intelligence signals for the prompt: "${prompt}". For each, provide a title, source, excerpt, url (#), and a sentiment score between 0.0 and 1.0.`;
-                schema = {
-                    type: Type.OBJECT, properties: { [AgentName.WEB]: { type: Type.OBJECT, properties: { webSignals: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, url: { type: Type.STRING }, source: { type: Type.STRING }, excerpt: { type: Type.STRING }, sentiment: { type: Type.NUMBER } } } } } } }
-                };
-                break;
-        }
-
-        // Call our local Secure Proxy instead of direct AI
-        const response = await fetch('http://localhost:3001/api/generate', {
+        const response = await fetch(`${BACKEND_URL}/api/agent-data`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: generationPrompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: schema
-                }
-            })
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ agentName: backendName, prompt, fileContext })
         });
 
         if (!response.ok) {
-            // Fallback to mock if server fails or isn't running
-            console.warn("Backend proxy usage failed, falling back to mock data.");
-            return mockGenerateAgentData(agentName, prompt, fileContext);
+            throw new Error(`Agent server responded with status: ${response.status}`);
         }
 
-        const jsonResponse = await response.json();
-        return getJsonFromResponse(jsonResponse) as AgentResultData;
-
+        const data = await response.json();
+        
+        // Make sure returning structure wraps properly inside [agentName] key
+        if (data[agentName]) return data;
+        return { [agentName]: data };
     } catch (error) {
         console.error(`Error in generateAgentData for ${agentName}:`, error);
-        // Robust fallback to mock data
-        return mockGenerateAgentData(agentName, prompt, fileContext);
+        throw error;
     }
 };
 
-
 export const synthesizeResults = async (results: AgentResultData[], prompt: string): Promise<string> => {
-    if (!ai) return mockSynthesizeResults(results, prompt);
-
-    const content = `Based on the user's prompt "${prompt}" and the following data gathered from various agents, please provide a concise, professional executive summary in Markdown format.
-
-    Data:
-    ${JSON.stringify(results, null, 2)}
-    `;
-
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: content,
+        const response = await fetch(`${BACKEND_URL}/api/synthesize`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ results, prompt })
         });
-        return response.text;
+
+        if (!response.ok) {
+            throw new Error(`Synthesis server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.synthesis || '';
     } catch (error) {
         console.error("Error in synthesizeResults:", error);
         throw new AgentError(
@@ -289,24 +123,59 @@ export const synthesizeResults = async (results: AgentResultData[], prompt: stri
     }
 };
 
-export const initializeChat = (prompt: string, results: AgentResultData[], summary: string) => {
-    if (!ai) return;
+export const saveQueryResults = async (prompt: string, synthesis: string, agents: string[], results: AgentResultData[]): Promise<string> => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/save-query`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ prompt, synthesis, agents, results })
+        });
+        if (!response.ok) throw new Error("Failed to save query on server");
+        const data = await response.json();
+        return data.queryId || '';
+    } catch (error) {
+        console.error("Failed to save query:", error);
+        return '';
+    }
+};
 
+export const initializeChat = (prompt: string, results: AgentResultData[], summary: string) => {
     const context = `You are a pharmaceutical industry analyst AI. The user's initial query was: "${prompt}". After running several data agents, the following executive summary was generated: "${summary}". Here is the raw data that informed the summary: ${JSON.stringify(results, null, 2)}. Your role is to answer follow-up questions concisely based ONLY on the provided context. Do not invent new data. If the answer is not in the context, state that clearly.`;
 
-    chatSession = ai.chats.create({
-        model: 'gemini-2.5-flash',
-        history: [
-            { role: 'user', parts: [{ text: context }] },
-            { role: 'model', parts: [{ text: "Understood. I've analyzed the report and the underlying data. I'm ready for your follow-up questions." }] }
-        ]
-    });
+    chatHistory = [
+        { role: 'user', parts: [{ text: context }] },
+        { role: 'model', parts: [{ text: "Understood. I've analyzed the report and the underlying data. I'm ready for your follow-up questions." }] }
+    ];
 };
 
 export const sendMessage = async (message: string): Promise<string> => {
-    if (!ai || !chatSession) {
-        return new Promise(resolve => setTimeout(() => resolve(`This is a mock chat response to your question: "${message}". I can provide more mock details if you ask. For example, the market seems to be growing steadily.`), 1000));
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ message, history: chatHistory })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Chat server responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data.text || '';
+        
+        // Append message and response to local chat session history
+        chatHistory.push({ role: 'user', parts: [{ text: message }] });
+        chatHistory.push({ role: 'model', parts: [{ text }] });
+
+        return text;
+    } catch (error) {
+        console.error("Error in sendMessage:", error);
+        return `[Connection Error] Could not connect to backend assistant. Detailed error: ${(error as any).message}`;
     }
-    const response = await chatSession.sendMessage({ message });
-    return response.text;
 };

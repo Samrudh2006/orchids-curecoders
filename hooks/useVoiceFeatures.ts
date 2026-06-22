@@ -67,9 +67,32 @@ const VOICE_EXPLANATIONS = {
 export const useVoiceFeatures = () => {
   const { speak, speakFeature, isEnabled } = useVoiceAssistant();
 
+  const getPreferences = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem('curecoders_voice_preferences');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+    return {
+      generalGuidance: false,
+      featureExplanations: false,
+      agentProgress: true,
+      chartNarration: true,
+      welcomeMessages: false,
+    };
+  };
+
   // Speak predefined explanations
   const explainFeature = (featureKey: keyof typeof VOICE_EXPLANATIONS) => {
     if (!isEnabled) return;
+    
+    const prefs = getPreferences();
+    if (!prefs.featureExplanations) return;
     
     const explanation = VOICE_EXPLANATIONS[featureKey];
     if (explanation) {
@@ -80,6 +103,9 @@ export const useVoiceFeatures = () => {
   // Speak custom text with pharmaceutical context
   const speakWithContext = (text: string, context?: string) => {
     if (!isEnabled) return;
+    
+    const prefs = getPreferences();
+    if (!prefs.generalGuidance) return;
     
     let contextualText = text;
     if (context === 'pharmaceutical') {
@@ -96,6 +122,9 @@ export const useVoiceFeatures = () => {
   // Speak agent status updates
   const speakAgentStatus = (agentName: string, status: string, result?: any) => {
     if (!isEnabled) return;
+    
+    const prefs = getPreferences();
+    if (!prefs.agentProgress) return;
     
     let message = '';
     switch (status.toLowerCase()) {
@@ -119,6 +148,9 @@ export const useVoiceFeatures = () => {
   const speakDataInsight = (dataType: string, data: any) => {
     if (!isEnabled) return;
     
+    const prefs = getPreferences();
+    if (!prefs.chartNarration) return;
+    
     let insight = '';
     switch (dataType) {
       case 'market':
@@ -140,6 +172,9 @@ export const useVoiceFeatures = () => {
   // Speak welcome messages for different sections
   const speakSectionWelcome = (section: string) => {
     if (!isEnabled) return;
+    
+    const prefs = getPreferences();
+    if (!prefs.welcomeMessages) return;
     
     const welcomeMessages: Record<string, string> = {
       'workspace': "Welcome to the CureCoders Workspace! Enter your pharmaceutical research query to start multi-agent analysis. I'll guide you through the process and explain the results.",

@@ -1,10 +1,11 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { Agent, AgentName, AgentStatus } from '../types';
 import SummaryDisplay from './SummaryDisplay';
 import ChatAnalysis from './ChatAnalysis';
 import { ResultDisplay } from './AgentCard';
 import { BarChart, ChevronDown, ChevronUp, FileText, Globe, LayoutGrid, Microscope, Ship, TrendingDown, TrendingUp, Zap, FileText as InternalIcon, BrainCircuit } from './Icons';
 import { useAppContext } from '../hooks/useAppContext';
+import { useVoiceAssistant } from '../context/VoiceAssistantContext';
 
 interface DashboardProps {
     prompt: string;
@@ -67,6 +68,20 @@ const DashboardSection: React.FC<{ title: string; subtitle: string; icon: ReactN
 const Dashboard: React.FC<DashboardProps> = (props) => {
     const { agents, summary, prompt } = props;
     const { chatHistory, isChatting, sendChatMessage } = useAppContext();
+    const { isEnabled: isVoiceEnabled, speak } = useVoiceAssistant();
+
+    // Speak follow-up chat responses
+    useEffect(() => {
+        if (isVoiceEnabled && chatHistory.length > 1) {
+            const lastMsg = chatHistory[chatHistory.length - 1];
+            if (lastMsg.sender === 'ai' && lastMsg.text) {
+                // Skip the initial welcome message from auto-reading
+                if (!lastMsg.text.includes("I've analyzed the report")) {
+                    speak(lastMsg.text);
+                }
+            }
+        }
+    }, [chatHistory, isVoiceEnabled, speak]);
 
     const findAgent = (name: AgentName) => agents.find(a => a.name === name && a.status === AgentStatus.DONE);
 

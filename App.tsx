@@ -21,15 +21,20 @@ import CollaborationPanel from './components/CollaborationPanel';
 import BookmarksManager from './components/BookmarksManager';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import LoginModal from './components/LoginModal';
+import { useAppContext } from './hooks/useAppContext';
+import LockedFeatureGate from './components/LockedFeatureGate';
 
 function AppContent() {
   const navigate = useNavigate();
   const { toggleTheme } = useTheme();
+  const { login } = useAppContext();
   const [showSearch, setShowSearch] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showCollaboration, setShowCollaboration] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   const closeAllModals = () => {
     setShowSearch(false);
@@ -37,7 +42,19 @@ function AppContent() {
     setShowCollaboration(false);
     setShowBookmarks(false);
     setShowShortcuts(false);
+    setShowLogin(false);
   };
+
+  useEffect(() => {
+    const handleOpenLogin = () => {
+      closeAllModals();
+      setShowLogin(true);
+    };
+    window.addEventListener('open-login', handleOpenLogin);
+    return () => {
+      window.removeEventListener('open-login', handleOpenLogin);
+    };
+  }, []);
 
   useKeyboardShortcuts({
     'ctrl+k': () => {
@@ -75,17 +92,46 @@ function AppContent() {
         onOpenBookmarks={() => setShowBookmarks(true)}
         onOpenComparison={() => setShowComparison(true)}
         onOpenCollaboration={() => setShowCollaboration(true)}
+        onOpenLogin={() => setShowLogin(true)}
       />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/architecture" element={<Architecture />} />
-          <Route path="/samples" element={<SampleOutputs />} />
-          <Route path="/apis" element={<MockAPIs />} />
-          <Route path="/queries" element={<StrategicQueries />} />
-          <Route path="/journey" element={<ProductJourney />} />
-          <Route path="/reports" element={<ReportsDemo />} />
+          <Route path="/history" element={
+            <LockedFeatureGate featureName="Research History" isFullPage>
+              <History />
+            </LockedFeatureGate>
+          } />
+          <Route path="/architecture" element={
+            <LockedFeatureGate featureName="Platform Architecture" isFullPage>
+              <Architecture />
+            </LockedFeatureGate>
+          } />
+          <Route path="/samples" element={
+            <LockedFeatureGate featureName="Sample Outputs" isFullPage>
+              <SampleOutputs />
+            </LockedFeatureGate>
+          } />
+          <Route path="/apis" element={
+            <LockedFeatureGate featureName="Mock API Integrations" isFullPage>
+              <MockAPIs />
+            </LockedFeatureGate>
+          } />
+          <Route path="/queries" element={
+            <LockedFeatureGate featureName="Strategic Queries" isFullPage>
+              <StrategicQueries />
+            </LockedFeatureGate>
+          } />
+          <Route path="/journey" element={
+            <LockedFeatureGate featureName="Product Journey" isFullPage>
+              <ProductJourney />
+            </LockedFeatureGate>
+          } />
+          <Route path="/reports" element={
+            <LockedFeatureGate featureName="Reports Demo" isFullPage>
+              <ReportsDemo />
+            </LockedFeatureGate>
+          } />
           <Route path="/payment" element={<Payment />} />
         </Routes>
       </main>
@@ -112,6 +158,11 @@ function AppContent() {
         isOpen={showShortcuts} 
         onClose={() => setShowShortcuts(false)} 
       />
+      <LoginModal 
+        isOpen={showLogin} 
+        onClose={() => setShowLogin(false)}
+        onLoginSuccess={login}
+      />
     </div>
   );
 }
@@ -120,13 +171,11 @@ function App() {
   return (
     <ThemeProvider>
       <VoiceAssistantProvider>
-        <QueryLimitProvider>
-          <ARIAEnhancedWrapper>
-            <Router>
-              <AppContent />
-            </Router>
-          </ARIAEnhancedWrapper>
-        </QueryLimitProvider>
+        <ARIAEnhancedWrapper>
+          <Router>
+            <AppContent />
+          </Router>
+        </ARIAEnhancedWrapper>
       </VoiceAssistantProvider>
     </ThemeProvider>
   );
