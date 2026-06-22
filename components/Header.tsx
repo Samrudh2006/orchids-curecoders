@@ -283,7 +283,7 @@ const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
         <Link to="/" className="flex items-center hover:opacity-90 transition-opacity">
-          <Logo className="h-8.5 w-auto" />
+          <Logo className="h-9 w-auto" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1">
