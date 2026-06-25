@@ -5,12 +5,16 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ className = 'h-9 w-auto' }) => {
+  // If the className doesn't already contain text color utility classes, default to theme-aware colors
+  const hasColorClass = /\btext-\w+/.test(className);
+  const colorClass = hasColorClass ? '' : 'text-slate-900 dark:text-white';
+
   return (
     <svg
       viewBox="0 0 180 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className} ${colorClass}`}
     >
       <defs>
         {/* Brand gradient for the icon and the text "Coders" */}
@@ -29,7 +33,7 @@ export const Logo: React.FC<LogoProps> = ({ className = 'h-9 w-auto' }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="currentColor"
-        className="text-cyan-500/5 dark:text-indigo-500/5"
+        fillOpacity="0.05"
       />
 
       {/* Left Coding Bracket < */}
@@ -50,19 +54,18 @@ export const Logo: React.FC<LogoProps> = ({ className = 'h-9 w-auto' }) => {
         strokeLinejoin="round"
       />
 
-      {/* Medical/Science Cross in center */}
+      {/* Medical/Science Cross in center - inherits SVG color */}
       <path
         d="M 20 14 L 20 26 M 14 20 L 26 20"
         stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
-        className="text-slate-700 dark:text-white"
       />
 
       {/* Center dot/node */}
       <circle cx="20" cy="20" r="1.5" fill="url(#logoGradient)" />
 
-      {/* Brand Name Text */}
+      {/* Brand Name Text - inherits SVG color */}
       <text
         x="45"
         y="27"
@@ -71,7 +74,6 @@ export const Logo: React.FC<LogoProps> = ({ className = 'h-9 w-auto' }) => {
         fontSize="21"
         letterSpacing="-0.03em"
         fill="currentColor"
-        className="text-slate-900 dark:text-white"
       >
         Cure
         <tspan fill="url(#logoGradient)">Coders</tspan>
@@ -81,12 +83,15 @@ export const Logo: React.FC<LogoProps> = ({ className = 'h-9 w-auto' }) => {
 };
 
 export const LogoIcon: React.FC<LogoProps> = ({ className = 'h-9 w-9' }) => {
+  const hasColorClass = /\btext-\w+/.test(className);
+  const colorClass = hasColorClass ? '' : 'text-slate-900 dark:text-white';
+
   return (
     <svg
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className} ${colorClass}`}
     >
       <defs>
         <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -104,7 +109,7 @@ export const LogoIcon: React.FC<LogoProps> = ({ className = 'h-9 w-9' }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="currentColor"
-        className="text-cyan-500/5 dark:text-indigo-500/5"
+        fillOpacity="0.05"
       />
 
       {/* Left Coding Bracket < */}
@@ -125,13 +130,12 @@ export const LogoIcon: React.FC<LogoProps> = ({ className = 'h-9 w-9' }) => {
         strokeLinejoin="round"
       />
 
-      {/* Medical/Science Cross in center */}
+      {/* Medical/Science Cross in center - inherits SVG color */}
       <path
         d="M 20 14 L 20 26 M 14 20 L 26 20"
         stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
-        className="text-slate-700 dark:text-white"
       />
 
       {/* Center dot/node */}
