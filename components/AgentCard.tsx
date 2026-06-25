@@ -175,23 +175,26 @@ export const PatentTimeline: React.FC<{ patents: { expiryDate: string, title: st
 
 export const PatentsResult: React.FC<{ data: AgentResultData[AgentName.PATENTS] }> = ({ data }) => {
     const [filters, setFilters] = useState({ owner: '', ftRisk: 'All', expiryYear: '' });
-    if (!data || !data.patents) return null;
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFilters(prev => ({...prev, [name]: value }));
     };
 
+    const patentsList = data?.patents || [];
+
     const filteredPatents = useMemo(() => {
-        return data.patents.filter(p => {
+        return patentsList.filter(p => {
             const ownerMatch = p.owner.toLowerCase().includes(filters.owner.toLowerCase());
             const riskMatch = filters.ftRisk === 'All' || p.ftRisk === filters.ftRisk;
             const yearMatch = !filters.expiryYear || new Date(p.expiryDate).getFullYear().toString() === filters.expiryYear;
             return ownerMatch && riskMatch && yearMatch;
         });
-    }, [data.patents, filters]);
+    }, [patentsList, filters]);
 
     const riskLevels = ['All', 'Low', 'Medium', 'High'];
+
+    if (!data || !data.patents) return null;
 
     return (
         <div>
@@ -232,19 +235,42 @@ export const PatentsResult: React.FC<{ data: AgentResultData[AgentName.PATENTS] 
     );
 };
 
+interface SortableHeaderProps {
+    columnKey: string;
+    children: React.ReactNode;
+    sortConfig: { key: string; direction: 'ascending' | 'descending' } | null;
+    requestSort: (key: string) => void;
+}
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({ columnKey, children, sortConfig, requestSort }) => {
+    const isSorted = sortConfig?.key === columnKey;
+    return (
+        <th className="p-2">
+            <button onClick={() => requestSort(columnKey)} className="flex items-center gap-1 group text-left font-semibold">
+                {children}
+                {isSorted ? (
+                    sortConfig?.direction === 'ascending' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>
+                ) : (
+                    <Filter className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100" />
+                )}
+            </button>
+        </th>
+    );
+};
+
 export const ClinicalResult: React.FC<{ data: AgentResultData[AgentName.CLINICAL] }> = ({ data }) => {
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(null);
     const [filters, setFilters] = useState({ sponsor: '', status: 'All', phase: 'All' });
-
-    if (!data || !data.trials) return null;
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFilters(prev => ({...prev, [name]: value }));
     };
 
+    const trialsList = data?.trials || [];
+
     const sortedAndFilteredTrials = useMemo(() => {
-        let sortableItems = [...data.trials].filter(t => {
+        let sortableItems = [...trialsList].filter(t => {
             const sponsorMatch = t.sponsor.toLowerCase().includes(filters.sponsor.toLowerCase());
             const statusMatch = filters.status === 'All' || t.status === filters.status;
             const phaseMatch = filters.phase === 'All' || t.phase === filters.phase;
@@ -253,34 +279,26 @@ export const ClinicalResult: React.FC<{ data: AgentResultData[AgentName.CLINICAL
 
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'ascending' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'ascending' ? 1 : -1;
+                const aVal = (a as any)[sortConfig.key];
+                const bVal = (b as any)[sortConfig.key];
+                if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
                 return 0;
             });
         }
         return sortableItems;
-    }, [data.trials, sortConfig, filters]);
+    }, [trialsList, sortConfig, filters]);
 
     const requestSort = (key: string) => {
         let direction: 'ascending' | 'descending' = 'ascending';
         if (sortConfig?.key === key && sortConfig.direction === 'ascending') direction = 'descending';
         setSortConfig({ key, direction });
     };
+
+    if (!data || !data.trials) return null;
     
     const uniqueStatuses = ['All', ...Array.from(new Set(data.trials.map(t => t.status)))];
     const uniquePhases = ['All', ...Array.from(new Set(data.trials.map(t => t.phase)))];
-
-    const SortableHeader: React.FC<{ columnKey: string, children: React.ReactNode }> = ({ columnKey, children }) => {
-        const isSorted = sortConfig?.key === columnKey;
-        return (
-            <th className="p-2">
-                <button onClick={() => requestSort(columnKey)} className="flex items-center gap-1 group">
-                    {children}
-                    {isSorted ? (sortConfig?.direction === 'ascending' ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>) : <Filter className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100" />}
-                </button>
-            </th>
-        );
-    };
 
     return (
         <div>
@@ -295,13 +313,13 @@ export const ClinicalResult: React.FC<{ data: AgentResultData[AgentName.CLINICAL
             </div>
             <div className="overflow-x-auto rounded-b-md border border-slate-200 dark:border-slate-700 border-t-0">
                 <table className="min-w-full text-sm">
-                    <thead className="bg-slate-100 dark:bg-slate-800 text-left text-slate-500 dark:text-slate-400">
+                    <thead className="bg-slate-100 dark:bg-slate-800 text-left text-slate-500 dark:text-slate-400 font-semibold">
                         <tr>
-                            <SortableHeader columnKey="id">ID</SortableHeader>
-                            <SortableHeader columnKey="title">Title</SortableHeader>
-                            <SortableHeader columnKey="phase">Phase</SortableHeader>
-                            <SortableHeader columnKey="status">Status</SortableHeader>
-                            <SortableHeader columnKey="sponsor">Sponsor</SortableHeader>
+                            <SortableHeader columnKey="id" sortConfig={sortConfig} requestSort={requestSort}>ID</SortableHeader>
+                            <SortableHeader columnKey="title" sortConfig={sortConfig} requestSort={requestSort}>Title</SortableHeader>
+                            <SortableHeader columnKey="phase" sortConfig={sortConfig} requestSort={requestSort}>Phase</SortableHeader>
+                            <SortableHeader columnKey="status" sortConfig={sortConfig} requestSort={requestSort}>Status</SortableHeader>
+                            <SortableHeader columnKey="sponsor" sortConfig={sortConfig} requestSort={requestSort}>Sponsor</SortableHeader>
                         </tr>
                     </thead>
                     <tbody>

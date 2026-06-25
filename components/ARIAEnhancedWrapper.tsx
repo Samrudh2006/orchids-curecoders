@@ -70,20 +70,22 @@ const ARIAEnhancedWrapper: React.FC<ARIAEnhancedWrapperProps> = ({ children }) =
                         'pharmaceutical research';
 
     // Celebrate with pharmaceutical context
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       celebrateDiscovery(analysisType, 'The artificial intelligence analysis has revealed actionable insights that could accelerate pharmaceutical innovation and improve patient outcomes.');
     }, 1000);
 
+    return () => clearTimeout(timer);
   }, [isReportReady, currentRunPrompt, celebrateDiscovery, isEnabled]);
 
   // Welcome message enhancement for pharmaceutical context
   useEffect(() => {
     const hasShownWelcome = localStorage.getItem('aria_pharmaceutical_welcome_shown');
     if (!hasShownWelcome && isEnabled) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         announceProgress('welcome', 'ARIA is now enhanced with advanced pharmaceutical intelligence capabilities. I specialize in drug discovery, market analysis, patent landscapes, and regulatory pathways. Ready to revolutionize your pharmaceutical research experience!');
         localStorage.setItem('aria_pharmaceutical_welcome_shown', 'true');
       }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [isEnabled, announceProgress]);
 
