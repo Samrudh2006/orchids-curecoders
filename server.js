@@ -14,14 +14,11 @@ import pptxgen from 'pptxgenjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getPerfectMockAnswer } from './mockAnswers.js';
 
 import bookmarksRouter from './routes/bookmarks.js';
 import collaborationRouter from './routes/collaboration.js';
 import uploadRouter from './routes/upload.js';
 import historyRouter from './routes/history.js';
-import compareRouter from './routes/compare.js';
-import voiceRouter from './routes/voice.js';
 import chatRouter from './routes/chat.js';
 
 import { searchSimilarChunks } from './services/vectorSearch.js';
@@ -66,8 +63,6 @@ app.use('/api/bookmarks', bookmarksRouter);
 app.use('/api/collaboration', collaborationRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/history', historyRouter);
-app.use('/api/compare', compareRouter);
-app.use('/api/voice', voiceRouter);
 app.use('/api/chat', chatRouter);
 
 // Custom AI Client for OpenAI-compatible proxies
@@ -137,37 +132,17 @@ const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     
-    let guestUser = null;
-    const getGuestUser = async () => {
-        if (!guestUser) {
-            guestUser = await prisma.user.findUnique({ where: { email: 'guest@curecoders.com' } });
-            if (!guestUser) {
-                guestUser = await prisma.user.create({
-                    data: { 
-                        email: 'guest@curecoders.com', 
-                        password: await bcrypt.hash('guest_password', 10)
-                    }
-                });
-            }
-        }
-        return guestUser;
-    };
-
-    if (token) {
-        jwt.verify(token, JWT_SECRET, async (err, user) => {
-            if (err) {
-                const guest = await getGuestUser();
-                req.user = { id: guest.id, email: guest.email };
-            } else {
-                req.user = user;
-            }
-            next();
-        });
-    } else {
-        const guest = await getGuestUser();
-        req.user = { id: guest.id, email: guest.email };
-        next();
+    if (!token) {
+        return res.status(401).json({ error: 'Authentication token required' });
     }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Invalid or expired token' });
+        }
+        req.user = user;
+        next();
+    });
 };
 
 // User Registration
@@ -330,25 +305,6 @@ app.post('/api/workspaces', authenticateToken, async (req, res) => {
         res.status(201).json(workspace);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create workspace' });
-    }
-});
-
-// Get History
-app.get('/api/history', authenticateToken, async (req, res) => {
-    try {
-        const workspace = await prisma.workspace.findFirst({
-            where: { userId: req.user.id },
-            orderBy: { createdAt: 'asc' }
-        });
-        if (!workspace) return res.json([]);
-        const queries = await prisma.searchQuery.findMany({
-            where: { workspaceId: workspace.id },
-            orderBy: { createdAt: 'desc' },
-            include: { results: true }
-        });
-        res.json(queries);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch search history' });
     }
 });
 
@@ -900,11 +856,6 @@ app.post('/api/decompose', async (req, res) => {
         // Artificial delay for realism
         await delay(1500 + Math.random() * 1000);
 
-        const perfectMock = getPerfectMockAnswer(prompt);
-        if (perfectMock) {
-            return res.json({ agents: perfectMock.agents });
-        }
-
         const availableAgents = ['market_data', 'patents', 'clinical_trials', 'web_signals', 'exim_sourcing'];
         if (fileUploaded) availableAgents.push('internal_documents');
 
@@ -950,25 +901,6 @@ app.post('/api/agent-data', async (req, res) => {
 
         // Artificial delay for realism (varies per agent to look natural)
         await delay(2000 + Math.random() * 3000);
-
-        const perfectMock = getPerfectMockAnswer(prompt);
-        if (perfectMock) {
-            let data = {};
-            if (agentName === 'market_data') {
-                data = perfectMock.unifiedData.market_data;
-            } else if (agentName === 'patents') {
-                data = { patents: perfectMock.unifiedData.patents };
-            } else if (agentName === 'clinical_trials') {
-                data = { trials: perfectMock.unifiedData.trials };
-            } else if (agentName === 'web_signals') {
-                data = { webSignals: perfectMock.unifiedData.webSignals };
-            } else if (agentName === 'exim_sourcing') {
-                data = perfectMock.unifiedData.exim;
-            } else {
-                data = perfectMock.unifiedData;
-            }
-            return res.json(data);
-        }
 
         let data = {};
         switch (agentName) {
@@ -1032,11 +964,6 @@ app.post('/api/synthesize', async (req, res) => {
         await delay(2000 + Math.random() * 2000);
 
         if (!prompt) return res.status(400).json({ error: 'prompt is required' });
-
-        const perfectMock = getPerfectMockAnswer(prompt);
-        if (perfectMock) {
-            return res.json({ synthesis: perfectMock.synthesis });
-        }
 
         let synthesis = '';
         if (ai && results) {
@@ -1118,31 +1045,6 @@ app.post('/api/save-query', async (req, res) => {
         res.json({ queryId: searchQuery.id });
     } catch (error) {
         console.error("Failed to save query:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Chat follow-up endpoint
-app.post('/api/chat', async (req, res) => {
-    try {
-        const { message, history } = req.body;
-        if (!message) return res.status(400).json({ error: 'message is required' });
-
-        if (ai) {
-            try {
-                const chat = ai.chats.create({
-                    model: 'gemini-2.0-flash',
-                    history: history || []
-                });
-                const response = await chat.sendMessage({ message });
-                return res.json({ text: response.text });
-            } catch (e) {
-                console.error("AI Chat failed:", e);
-            }
-        }
-
-        res.json({ text: `[Simulated Analyst] Thank you for asking. Regarding "${message}", our data reveals steady market growth, high trial density, and manageable patent exposure for next-generation assets.` });
-    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });

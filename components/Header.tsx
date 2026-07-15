@@ -279,6 +279,8 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+    const [isDocOpen, setIsDocOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
@@ -289,15 +291,15 @@ const Header: React.FC<HeaderProps> = ({
         <div className="hidden lg:flex items-center gap-1">
           <div className="relative">
             <button
-              onClick={() => setIsNavOpen(!isNavOpen)}
-              onBlur={() => setTimeout(() => setIsNavOpen(false), 200)}
+              onClick={() => setIsDocOpen(!isDocOpen)}
+              onBlur={() => setTimeout(() => setIsDocOpen(false), 200)}
               className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Documentation
-              <ChevronDown className={`w-4 h-4 transition-transform ${isNavOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 transition-transform ${isDocOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {isNavOpen && (
+            {isDocOpen && (
               <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
                 {navItems.map((item) => (
                   <Link
@@ -343,6 +345,18 @@ const Header: React.FC<HeaderProps> = ({
 
             {isNavOpen && (
               <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
+                {/* Mobile App Features */}
+                <button
+                  onClick={() => { setIsNavOpen(false); if(onOpenSearch) onOpenSearch(); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 md:hidden"
+                >
+                  <Search className="w-4 h-4 text-primary" />
+                  Search Queries
+                </button>
+                
+                <div className="my-1 border-t border-slate-100 dark:border-slate-700 md:hidden"></div>
+
+                {/* Documentation Links */}
                 {navItems.map((item) => (
                   <Link
                     key={item.path}
@@ -385,7 +399,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Bookmarks */}
           <button
             onClick={onOpenBookmarks}
-            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-emerald-500/5"
+            className="group relative items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-emerald-500/5 hidden sm:flex"
             title="Bookmarks (Ctrl+B)"
           >
             <Bookmark className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
@@ -396,7 +410,7 @@ const Header: React.FC<HeaderProps> = ({
           <Link
             to="/history"
             onMouseEnter={() => explainFeature('history')}
-            className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 hover:border-amber-200 dark:hover:border-amber-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-amber-500/5"
+            className="group relative items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 hover:border-amber-200 dark:hover:border-amber-800/50 transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-amber-500/5 hidden sm:flex"
             aria-label="View history"
           >
             <History className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />

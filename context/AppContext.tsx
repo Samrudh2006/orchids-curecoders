@@ -121,12 +121,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const runMasterAgent = useCallback(async (currentPrompt: string) => {
         if (!currentPrompt.trim() || isOrchestrating) return;
 
-        // Check query limit for guest users
         if (!localStorage.getItem('curecoders_auth_token')) {
-            if (!canQuery) {
-                setError("out.of.free.queries");
-                return;
-            }
+            // Trigger the login modal
+            window.dispatchEvent(new CustomEvent('open-login'));
+            return;
         }
 
         setIsOrchestrating(true);
@@ -213,11 +211,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     successfulResults
                 );
                 setQueryId(savedQueryId);
-
-                // Increment free query limit counter for guests
-                if (!localStorage.getItem('curecoders_auth_token')) {
-                    incrementQuery();
-                }
 
                 // Refresh history list
                 loadSearchHistory();

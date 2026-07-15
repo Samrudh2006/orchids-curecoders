@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { UploadCloud, FileText, X, CheckCircle } from './Icons';
+import { getApiUrl, getAuthHeaders } from '../services/apiConfig';
 
 interface DragDropUploadProps {
     onFileUpload: (file: File) => void;
@@ -43,8 +44,9 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
             setTimeout(() => setUploadStep('Extracting Text...'), 1000);
             setTimeout(() => setUploadStep('Generating Embeddings...'), 2500);
 
-            const res = await fetch('http://localhost:3001/api/upload', {
+            const res = await fetch(`${getApiUrl()}/api/upload`, {
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formData
             });
 
