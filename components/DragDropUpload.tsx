@@ -29,34 +29,54 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
         setIsDragOver(false);
     }, []);
 
+    const [uploadStep, setUploadStep] = useState<string>('');
+
+    const uploadFile = async (file: File) => {
+        setIsUploading(true);
+        setUploadStep('Uploading Document...');
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Artificial delay to show UI states as requested
+            setTimeout(() => setUploadStep('Extracting Text...'), 1000);
+            setTimeout(() => setUploadStep('Generating Embeddings...'), 2500);
+
+            const res = await fetch('http://localhost:3001/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+            
+            // Wait a moment for final state before showing success
+            await new Promise(resolve => setTimeout(resolve, 3500));
+            onFileUpload(file);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to upload document");
+        } finally {
+            setIsUploading(false);
+            setUploadStep('');
+        }
+    };
+
     const onDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragOver(false);
-        
         if (disabled) return;
 
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            setIsUploading(true);
-            try {
-                await new Promise(resolve => setTimeout(resolve, 500)); // Simulate upload delay
-                onFileUpload(files[0]);
-            } finally {
-                setIsUploading(false);
-            }
+            await uploadFile(files[0]);
         }
     }, [onFileUpload, disabled]);
 
     const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            setIsUploading(true);
-            try {
-                await new Promise(resolve => setTimeout(resolve, 500)); // Simulate upload delay
-                onFileUpload(files[0]);
-            } finally {
-                setIsUploading(false);
-            }
+            await uploadFile(files[0]);
         }
     };
 
@@ -142,7 +162,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-cyan-700 dark:text-cyan-300">
-                                Uploading Document...
+                                {uploadStep || 'Processing...'}
                             </h3>
                             <p className="text-sm text-cyan-600 dark:text-cyan-400 mt-1">
                                 Please wait while we process your file

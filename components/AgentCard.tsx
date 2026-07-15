@@ -57,6 +57,7 @@ export const KeyValue: React.FC<{ label: string, value: React.ReactNode }> = ({ 
 );
 
 export const CompetitorPieChart: React.FC<{ data: { name: string; share: string }[] }> = ({ data }) => {
+    if (!data || !Array.isArray(data)) return <div className="text-slate-500 italic text-sm">Competitor data unavailable</div>;
     const colors = ['#4F46E5', '#10B981', '#F59E0B', '#6366F1', '#34D399'];
     let cumulativePercent = 0;
     const gradients = data.map((item, index) => {
@@ -132,7 +133,7 @@ export const MarketDataResult: React.FC<{ data: AgentResultData[AgentName.MARKET
             </div>
              <div>
                 <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Top Competitors</h4>
-                <CompetitorPieChart data={data.topCompetitors} />
+                {data.topCompetitors ? <CompetitorPieChart data={data.topCompetitors} /> : <div className="text-slate-500 italic text-sm">No competitor data found</div>}
             </div>
         </div>
     );

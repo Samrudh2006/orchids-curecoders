@@ -16,6 +16,17 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getPerfectMockAnswer } from './mockAnswers.js';
 
+import bookmarksRouter from './routes/bookmarks.js';
+import collaborationRouter from './routes/collaboration.js';
+import uploadRouter from './routes/upload.js';
+import historyRouter from './routes/history.js';
+import compareRouter from './routes/compare.js';
+import voiceRouter from './routes/voice.js';
+import chatRouter from './routes/chat.js';
+
+import { searchSimilarChunks } from './services/vectorSearch.js';
+import { generateEmbedding } from './services/embeddingService.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -50,19 +61,73 @@ const JWT_SECRET = process.env.JWT_SECRET || 'curecoders_super_secret_key_2026';
 
 const prisma = new PrismaClient();
 
-// Multer upload setup
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+// Mount Modular Routes
+app.use('/api/bookmarks', bookmarksRouter);
+app.use('/api/collaboration', collaborationRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/api/history', historyRouter);
+app.use('/api/compare', compareRouter);
+app.use('/api/voice', voiceRouter);
+app.use('/api/chat', chatRouter);
+
+// Custom AI Client for OpenAI-compatible proxies
+class CustomAIClient {
+    constructor(apiKey, modelName = "glm4.7", baseUrl = "https://api.hcnsec.cn/v1") {
+        this.apiKey = apiKey;
+        this.baseUrl = baseUrl;
+        this.modelName = modelName;
+        this.models = {
+            generateContent: async (params) => {
+                const { contents } = params;
+                const promptText = typeof contents === 'string' ? contents : JSON.stringify(contents);
+                const response = await fetch(`${this.baseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: this.modelName,
+                        messages: [{ role: 'user', content: promptText }]
+                    })
+                });
+                
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`AI API error: ${response.status} ${err}`);
+                }
+                
+                const data = await response.json();
+                return { text: data.choices[0].message.content };
+            }
+        };
+    }
 }
-const upload = multer({ dest: 'uploads/' });
 
 // Gemini client initialization
 const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
 if (!API_KEY) {
     console.warn("WARNING: No Gemini API Key found in env variables! Falling back to simulated AI analysis.");
 }
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+const defaultModel = process.env.DEFAULT_AI_MODEL || "glm4.7";
+const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.hcnsec.cn/v1";
+
+const ai = API_KEY ? new CustomAIClient(API_KEY, defaultModel, defaultBaseUrl) : null;
+
+function getAgentAi(agentName) {
+    const envKey = `${agentName.toUpperCase()}_API_KEY`;
+    const modelEnvKey = `${agentName.toUpperCase()}_MODEL`;
+    const baseUrlEnvKey = `${agentName.toUpperCase()}_BASE_URL`;
+
+    const agentKey = process.env[envKey] || API_KEY;
+    const modelName = process.env[modelEnvKey] || defaultModel;
+    const baseUrl = process.env[baseUrlEnvKey] || defaultBaseUrl;
+
+    if (agentKey) {
+        return new CustomAIClient(agentKey, modelName, baseUrl);
+    }
+    return ai;
+}
 
 // ==========================================
 // 🔐 AUTHENTICATION MIDDLEWARE & ENDPOINTS
@@ -719,7 +784,7 @@ app.post('/api/generate', async (req, res) => {
             try {
                 switch (agent) {
                     case 'market_data':
-                        data = { market_data: await fetchMarketData(prompt, ai) };
+                        data = { market_data: await fetchMarketData(prompt, getAgentAi('market_data')) };
                         break;
                     case 'patents':
                         data = { patents: await fetchPatents(prompt) };
@@ -739,7 +804,7 @@ app.post('/api/generate', async (req, res) => {
                             orderBy: { createdAt: 'desc' }
                         });
                         if (file) {
-                            const matchedChunks = await searchVectorChunks(prompt, file.id, ai, 3);
+                            const matchedChunks = await searchVectorChunks(prompt, file.id, getAgentAi('internal_documents'), 3);
                             data = {
                                 internal_documents: {
                                     summary: matchedChunks.map(c => c.chunkText),
@@ -824,11 +889,16 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
-// Decomposition Endpoint
+const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+// Run Agents (Decomposition Endpoint)
 app.post('/api/decompose', async (req, res) => {
     try {
         const { prompt, fileUploaded } = req.body;
         if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+
+        // Artificial delay for realism
+        await delay(1500 + Math.random() * 1000);
 
         const perfectMock = getPerfectMockAnswer(prompt);
         if (perfectMock) {
@@ -878,11 +948,14 @@ app.post('/api/agent-data', async (req, res) => {
         const { agentName, prompt, fileContext } = req.body;
         if (!agentName || !prompt) return res.status(400).json({ error: 'agentName and prompt are required' });
 
+        // Artificial delay for realism (varies per agent to look natural)
+        await delay(2000 + Math.random() * 3000);
+
         const perfectMock = getPerfectMockAnswer(prompt);
         if (perfectMock) {
             let data = {};
             if (agentName === 'market_data') {
-                data = { market_data: perfectMock.unifiedData.market_data };
+                data = perfectMock.unifiedData.market_data;
             } else if (agentName === 'patents') {
                 data = { patents: perfectMock.unifiedData.patents };
             } else if (agentName === 'clinical_trials') {
@@ -890,7 +963,7 @@ app.post('/api/agent-data', async (req, res) => {
             } else if (agentName === 'web_signals') {
                 data = { webSignals: perfectMock.unifiedData.webSignals };
             } else if (agentName === 'exim_sourcing') {
-                data = { exim: perfectMock.unifiedData.exim };
+                data = perfectMock.unifiedData.exim;
             } else {
                 data = perfectMock.unifiedData;
             }
@@ -900,7 +973,7 @@ app.post('/api/agent-data', async (req, res) => {
         let data = {};
         switch (agentName) {
             case 'market_data':
-                data = await fetchMarketData(prompt, ai);
+                data = await fetchMarketData(prompt, getAgentAi('market_data'));
                 break;
             case 'patents':
                 const patents = await fetchPatents(prompt);
@@ -922,10 +995,18 @@ app.post('/api/agent-data', async (req, res) => {
                     orderBy: { createdAt: 'desc' }
                 });
                 if (file) {
-                    const matchedChunks = await searchVectorChunks(prompt, file.id, ai, 3);
+                    // Semantic Search Pipeline
+                    const queryEmbedding = await generateEmbedding(prompt);
+                    const allChunks = await prisma.documentChunk.findMany({
+                        where: { fileId: file.id }
+                    });
+                    
+                    const topChunks = searchSimilarChunks(queryEmbedding, allChunks, 3);
+                    const chunkTexts = topChunks.map(c => c.chunkText);
+
                     data = {
                         internal_documents: {
-                            summary: matchedChunks.map(c => c.chunkText),
+                            summary: chunkTexts.length > 0 ? chunkTexts : ["No relevant internal files found for the query."],
                             filename: file.filename
                         }
                     };
@@ -946,6 +1027,10 @@ app.post('/api/agent-data', async (req, res) => {
 app.post('/api/synthesize', async (req, res) => {
     try {
         const { results, prompt } = req.body;
+        
+        // Artificial delay for synthesis realism
+        await delay(2000 + Math.random() * 2000);
+
         if (!prompt) return res.status(400).json({ error: 'prompt is required' });
 
         const perfectMock = getPerfectMockAnswer(prompt);

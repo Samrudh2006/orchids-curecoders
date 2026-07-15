@@ -35,8 +35,6 @@ model SearchQuery {
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   agents      String        // JSON string array of agents used
   results     AgentResult[]
-  bookmarks   Bookmark[]
-  shared      SharedQuery[]
   createdAt   DateTime      @default(now())
 }
 
@@ -72,31 +70,36 @@ model DocumentChunk {
 }
 
 model Bookmark {
-  id        String      @id @default(uuid())
-  userId    String
-  queryId   String
-  query     SearchQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
-  tags      String      // JSON string array of tags
-  createdAt DateTime    @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  query        String
+  summary      String
+  agentResults String   // JSON string
+  tags         String   @default("[]") // JSON string array of tags
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-model SharedQuery {
-  id         String      @id @default(uuid())
-  queryId    String
-  query      SearchQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
-  sharedById String
+model SharedWorkspace {
+  id         String    @id @default(uuid())
+  ownerId    String
+  sharedWith String    // JSON string array of emails
+  permission String    @default("Viewer") // Viewer, Commenter, Editor
+  query      String
+  result     String    // JSON string of synthesis + agent results
+  createdAt  DateTime  @default(now())
   comments   Comment[]
-  createdAt  DateTime    @default(now())
 }
 
 model Comment {
-  id            String      @id @default(uuid())
-  sharedQueryId String
-  sharedQuery   SharedQuery @relation(fields: [sharedQueryId], references: [id], onDelete: Cascade)
-  userId        String
-  userEmail     String
-  content       String
-  createdAt     DateTime    @default(now())
+  id                String          @id @default(uuid())
+  sharedWorkspaceId String
+  sharedWorkspace   SharedWorkspace @relation(fields: [sharedWorkspaceId], references: [id], onDelete: Cascade)
+  userId            String
+  userEmail         String
+  content           String
+  createdAt         DateTime        @default(now())
 }
 
 model TeamChatMessage {
