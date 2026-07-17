@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { createRequire } from 'module';
+import { OAuth2Client } from 'google-auth-library';
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse');
 import ExcelJS from 'exceljs';
@@ -29,25 +30,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Setup dynamic SQLite location for Vercel serverless environment
-if (process.env.VERCEL) {
-    const tempDbPath = '/tmp/dev.db';
-    const originalDbPath = path.join(__dirname, 'prisma', 'dev.db');
-    if (!fs.existsSync(tempDbPath)) {
-        try {
-            if (fs.existsSync(originalDbPath)) {
-                fs.copyFileSync(originalDbPath, tempDbPath);
-                console.log(`Copied database to Vercel ephemeral path: ${tempDbPath}`);
-            } else {
-                fs.writeFileSync(tempDbPath, '');
-                console.log(`Initialized empty database in Vercel ephemeral path: ${tempDbPath}`);
-            }
-        } catch (e) {
-            console.error("Failed to copy SQLite database to /tmp on Vercel:", e);
-        }
-    }
-    process.env.DATABASE_URL = `file:${tempDbPath}`;
-}
+
 
 const app = express();
 app.use(cors());
@@ -206,6 +189,58 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// Google OAuth Client
+const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
+
+// Google Sign-In / Sign-Up
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ error: 'Token is required' });
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: process.env.VITE_GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return res.status(400).json({ error: 'Invalid Google token' });
+        }
+
+        const email = payload.email;
+
+        // Check if user exists
+        let user = await prisma.user.findUnique({
+            where: { email },
+            include: { workspaces: true }
+        });
+
+        // If not, create them with a secure random password
+        if (!user) {
+            const randomPassword = require('crypto').randomBytes(32).toString('hex');
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+            
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    password: hashedPassword,
+                    workspaces: {
+                        create: { name: 'Default Workspace' }
+                    }
+                },
+                include: { workspaces: true }
+            });
+        }
+
+        const jwtToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token: jwtToken, user: { id: user.id, email: user.email, role: user.role }, workspaces: user.workspaces });
+
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(500).json({ error: 'Google Authentication Failed' });
+    }
+});
+
 // Get Profile
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
@@ -352,89 +387,7 @@ function cosineSimilarity(vecA, vecB) {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// Ingest PDF file
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-        
-        let textContent = '';
-        if (req.file.mimetype === 'application/pdf') {
-            const dataBuffer = fs.readFileSync(req.file.path);
-            const data = await pdfParse(dataBuffer);
-            textContent = data.text;
-        } else {
-            textContent = fs.readFileSync(req.file.path, 'utf8');
-        }
 
-        // Get default workspace (or create one)
-        // For development, we allow anonymous uploads linked to a global default if no auth header
-        let workspaceId;
-        const authHeader = req.headers['authorization'];
-        if (authHeader) {
-            const token = authHeader.split(' ')[1];
-            try {
-                const decoded = jwt.verify(token, JWT_SECRET);
-                const workspace = await prisma.workspace.findFirst({ where: { userId: decoded.id } });
-                workspaceId = workspace.id;
-            } catch (e) {
-                // Token error
-            }
-        }
-        
-        if (!workspaceId) {
-            // Find or create global system workspace
-            let globalUser = await prisma.user.findFirst({ where: { email: 'guest@curecoders.com' } });
-            if (!globalUser) {
-                globalUser = await prisma.user.create({
-                    data: { email: 'guest@curecoders.com', password: 'guest_password' }
-                });
-                await prisma.workspace.create({ data: { name: 'Guest Workspace', userId: globalUser.id } });
-            }
-            const workspace = await prisma.workspace.findFirst({ where: { userId: globalUser.id } });
-            workspaceId = workspace.id;
-        }
-
-        const uploadedFile = await prisma.uploadedFile.create({
-            data: {
-                filename: req.file.originalname,
-                filepath: req.file.path,
-                sizeBytes: req.file.size,
-                filetype: req.file.mimetype,
-                workspaceId
-            }
-        });
-
-        // Split text into chunks and embed
-        const chunks = chunkText(textContent);
-        for (const chunk of chunks) {
-            const embedding = await getEmbedding(chunk, ai);
-            await prisma.documentChunk.create({
-                data: {
-                    fileId: uploadedFile.id,
-                    chunkText: chunk,
-                    embedding: JSON.stringify(embedding)
-                }
-            });
-        }
-
-        res.json({ message: 'File uploaded and indexed successfully', fileId: uploadedFile.id });
-    } catch (error) {
-        console.error("Upload & Ingestion Error:", error);
-        res.status(500).json({ error: 'Failed to upload and parse file' });
-    }
-});
-
-// List Documents
-app.get('/api/documents', async (req, res) => {
-    try {
-        const files = await prisma.uploadedFile.findMany({
-            orderBy: { createdAt: 'desc' }
-        });
-        res.json(files);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve documents' });
-    }
-});
 
 // ==========================================
 // 🧪 EXTERNAL REAL API INTEGRATIONS

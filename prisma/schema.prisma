@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -25,6 +26,8 @@ model Workspace {
   queries   SearchQuery[]
   files     UploadedFile[]
   createdAt DateTime       @default(now())
+
+  @@index([userId])
 }
 
 model SearchQuery {
@@ -36,6 +39,8 @@ model SearchQuery {
   agents      String        // JSON string array of agents used
   results     AgentResult[]
   createdAt   DateTime      @default(now())
+
+  @@index([workspaceId])
 }
 
 model AgentResult {
@@ -46,6 +51,8 @@ model AgentResult {
   resultJson String      // JSON string of agent data
   status     String      // DONE, FAILED, RUNNING
   createdAt  DateTime    @default(now())
+
+  @@index([queryId])
 }
 
 model UploadedFile {
@@ -58,6 +65,8 @@ model UploadedFile {
   workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   chunks      DocumentChunk[]
   createdAt   DateTime        @default(now())
+
+  @@index([workspaceId])
 }
 
 model DocumentChunk {
@@ -67,6 +76,8 @@ model DocumentChunk {
   chunkText String
   embedding String       // Float array represented as JSON string
   createdAt DateTime     @default(now())
+
+  @@index([fileId])
 }
 
 model Bookmark {
@@ -100,6 +111,8 @@ model Comment {
   userEmail         String
   content           String
   createdAt         DateTime        @default(now())
+
+  @@index([sharedWorkspaceId])
 }
 
 model TeamChatMessage {

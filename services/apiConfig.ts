@@ -9,15 +9,7 @@ export const getApiUrl = (): string => {
     return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
   }
   
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3001';
-    }
-    return window.location.origin;
-  }
-  
-  return 'http://localhost:3001';
+  return '';
 };
 
 export const getAuthHeaders = (): Record<string, string> => {

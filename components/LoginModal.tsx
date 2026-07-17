@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Lock, Mail, Sparkles, CheckCircle, Shield, Zap, BarChart } from './Icons';
 import getApiUrl from '../services/apiConfig';
+import { GoogleLogin } from '@react-oauth/google';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -48,6 +49,26 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       onClose();
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${getApiUrl()}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Google Authentication failed');
+      onLoginSuccess(data.token, data.user);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong with Google Login');
     } finally {
       setIsLoading(false);
     }
@@ -294,6 +315,17 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
             <span className="text-xs text-slate-400 font-medium">or</span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+          </div>
+
+          <div className="flex justify-center mb-5 w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              width="100%"
+            />
           </div>
 
           {/* Switch mode */}
