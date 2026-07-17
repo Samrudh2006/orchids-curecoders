@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useVoiceAssistant } from '../context/VoiceAssistantContext';
 
 const VoiceAssistantUI: React.FC = () => {
-  const { isEnabled, isSpeaking, toggleVoice, speak, stopSpeaking } = useVoiceAssistant();
+  const { isEnabled, isSpeaking, isListening, startListening, stopListening, toggleVoice, speak, stopSpeaking } = useVoiceAssistant();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
 
@@ -109,6 +109,23 @@ const VoiceAssistantUI: React.FC = () => {
               
               <div className="space-y-2">
                 <button
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={!isEnabled}
+                  className={`w-full text-left px-3 py-3 text-sm rounded-lg transition-colors font-medium flex items-center justify-between shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isListening 
+                      ? 'bg-red-500 text-white animate-pulse' 
+                      : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600'
+                  }`}
+                >
+                  <span>{isListening ? '🎙️ Listening (Click to stop)...' : '🎙️ Tap to Chat with ARIA'}</span>
+                  {isListening && <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                  </span>}
+                </button>
+                <div className="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
+
+                <button
                   onClick={() => handleQuickCommands('intro')}
                   disabled={!isEnabled}
                   className="w-full text-left px-3 py-2 text-sm bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -187,6 +204,34 @@ const VoiceAssistantUI: React.FC = () => {
                 }`}></div>
               </button>
             </div>
+
+            {/* Direct Chat Toggle (Top Left) */}
+            {isEnabled && (
+              <div className="absolute -top-2 -left-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    isListening ? stopListening() : startListening();
+                  }}
+                  className={`w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all duration-200 ${
+                    isListening 
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                      : 'bg-pink-500 hover:bg-pink-600'
+                  }`}
+                  title={isListening ? 'Stop Listening' : 'Chat with ARIA'}
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isListening ? (
+                      // Stop icon
+                      <rect x="6" y="6" width="12" height="12" fill="currentColor" />
+                    ) : (
+                      // Chat/Mic icon
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    )}
+                  </svg>
+                </button>
+              </div>
+            )}
           </button>
         </div>
       </div>

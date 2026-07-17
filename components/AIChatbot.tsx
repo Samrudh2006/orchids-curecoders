@@ -21,14 +21,16 @@ const getInitialMessage = (): Message => ({
 });
 
 const AIChatbot: React.FC = () => {
-  const { speak, isEnabled, toggleVoice, isSpeaking } = useVoiceAssistant();
+  const { speak, isEnabled, toggleVoice, isSpeaking, playSarvamAudio } = useVoiceAssistant();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListeningMic, setIsListeningMic] = useState(false);
   const [messages, setMessages] = useState<Message[]>([getInitialMessage()]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -204,6 +206,100 @@ Provide a helpful, concise response. If it's about the platform, use the context
     }
   };
 
+  const startLocalListening = () => {
+    if (!isEnabled || typeof window === 'undefined') return;
+    
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition not supported.");
+      return;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListeningMic(true);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue(''); // Clear input since we're using it
+      
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: transcript,
+        sender: 'user',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setIsLoading(true);
+
+      try {
+        const res = await fetch('http://localhost:3001/api/voice-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: transcript, language: 'en-IN' })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.text || "Sorry, I had trouble processing that.",
+            sender: 'bot',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, botMessage]);
+
+          if (data.audio) {
+            playSarvamAudio(data.audio);
+          } else if (data.text) {
+            speak(data.text);
+          }
+        }
+      } catch (err) {
+        console.error("Voice chat error:", err);
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "Sorry, I had trouble connecting to the server.",
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+        speak("Sorry, I had trouble connecting to the server.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech Recognition Error:", event.error);
+      setIsListeningMic(false);
+    };
+
+    recognition.onend = () => {
+      setIsListeningMic(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopLocalListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListeningMic(false);
+    }
+  };
+
   const quickQuestions = [
     "How do I use the platform?",
     "What are the AI agents?",
@@ -365,6 +461,21 @@ Provide a helpful, concise response. If it's about the platform, use the context
                 >
                   {isEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
                 </button>
+
+                {/* Direct Voice Chat Button */}
+                {isEnabled && (
+                  <button
+                    onClick={isListeningMic ? stopLocalListening : startLocalListening}
+                    className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
+                      isListeningMic
+                        ? 'bg-red-500 text-white animate-pulse shadow-lg'
+                        : 'bg-pink-100 dark:bg-pink-900/30 text-pink-500 hover:bg-pink-200 dark:hover:bg-pink-900/50 hover:shadow-md'
+                    }`}
+                    title={isListeningMic ? 'Stop Listening' : 'Tap to Chat with ARIA'}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </button>
+                )}
                 
                 {/* Input Field */}
                 <div className="flex-1 relative">

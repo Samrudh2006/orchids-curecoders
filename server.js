@@ -798,6 +798,82 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
+// ==========================================
+// 🎙️ CONVERSATIONAL VOICE ASSISTANT (SARVAM AI)
+// ==========================================
+app.post('/api/voice-chat', async (req, res) => {
+    try {
+        const { text, language = 'en-IN' } = req.body;
+        
+        if (!text) {
+            return res.status(400).json({ error: 'Text is required' });
+        }
+
+        // 1. Send to DeepSeek (Conversational Brain)
+        const systemPrompt = "You are ARIA, a highly intelligent and helpful AI pharmaceutical research assistant for CureCoders. Keep your answers brief, conversational, and directly answer the user's question without formatting like markdown.";
+        
+        let aiResponseText = "I'm sorry, I couldn't process that.";
+        if (ai) {
+            try {
+                // Using the existing CustomAIClient
+                const response = await ai.models.generateContent({
+                    contents: `${systemPrompt}\n\nUser asks: ${text}`
+                });
+                aiResponseText = response.text;
+            } catch (e) {
+                console.error("AI chat generation failed:", e);
+                aiResponseText = "I'm having trouble connecting to my brain right now.";
+            }
+        }
+
+        // 2. Send text to Sarvam AI (Text-to-Speech)
+        let audioBase64 = null;
+        if (process.env.SARVAM_API_KEY && process.env.SARVAM_API_KEY !== 'your_sarvam_api_key_here') {
+            try {
+                const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'api-subscription-key': process.env.SARVAM_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: [aiResponseText],
+                        target_language_code: language,
+                        speaker: 'meera', // 'meera' for female English/Hindi voice
+                        pitch: 0,
+                        pace: 1.05,
+                        loudness: 1.5,
+                        speech_sample_rate: 16000,
+                        enable_preprocessing: true,
+                        model: 'bulbul:v1' 
+                    })
+                });
+
+                if (sarvamRes.ok) {
+                    const sarvamData = await sarvamRes.json();
+                    if (sarvamData.audios && sarvamData.audios.length > 0) {
+                        audioBase64 = sarvamData.audios[0];
+                    }
+                } else {
+                    console.error("Sarvam API Error:", await sarvamRes.text());
+                }
+            } catch (e) {
+                console.error("Sarvam AI connection failed:", e);
+            }
+        }
+
+        res.json({
+            text: aiResponseText,
+            audio: audioBase64 // Will be null if Sarvam failed or key is missing
+        });
+
+    } catch (error) {
+        console.error("Voice Chat execution error:", error);
+        res.status(500).json({ error: error.message || "Internal Server Error" });
+    }
+});
+
+
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 // Run Agents (Decomposition Endpoint)

@@ -11,6 +11,12 @@ interface VoiceAssistantContextType {
   speakChartExplanation: (chartData: any) => void;
   announceProgress: (stage: string, details?: string) => void;
   celebrateDiscovery: (discoveryType: string, significance?: string) => void;
+  
+  // Conversational API additions
+  isListening: boolean;
+  startListening: () => void;
+  stopListening: () => void;
+  playSarvamAudio: (base64Audio: string) => void;
 }
 
 interface SpeechOptions {
@@ -45,7 +51,10 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     return false; // Default to disabled for SSR
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [synth] = useState(() => typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const recognitionRef = React.useRef<any>(null);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     localStorage.setItem('curecoders_voice_enabled', JSON.stringify(isEnabled));
@@ -177,7 +186,106 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
       synth.cancel();
       setIsSpeaking(false);
     }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsSpeaking(false);
+    }
   }, [synth]);
+
+  const playSarvamAudio = useCallback((base64Audio: string) => {
+    if (!isEnabled) return;
+    try {
+      stopSpeaking();
+      const audioSrc = `data:audio/wav;base64,${base64Audio}`;
+      const audio = new Audio(audioSrc);
+      audioRef.current = audio;
+      
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = (e) => {
+        console.error("Sarvam Audio Playback Error:", e);
+        setIsSpeaking(false);
+      };
+      
+      audio.play();
+    } catch (error) {
+      console.error("Error playing Sarvam audio:", error);
+      setIsSpeaking(false);
+    }
+  }, [isEnabled, stopSpeaking]);
+
+  const startListening = useCallback(() => {
+    if (!isEnabled || typeof window === 'undefined') return;
+    
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition not supported in this browser.");
+      speak("Sorry, your browser doesn't support speech recognition.");
+      return;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN'; // Default to English/Hindi accents for better local accuracy
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      stopSpeaking();
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log("🗣️ You said:", transcript);
+      
+      // Send transcript to backend
+      try {
+        const res = await fetch('http://localhost:3001/api/voice-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: transcript, language: 'en-IN' })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.audio) {
+            playSarvamAudio(data.audio);
+          } else if (data.text) {
+            // Fallback to browser voice if Sarvam failed
+            speak(data.text);
+          }
+        }
+      } catch (err) {
+        console.error("Voice chat error:", err);
+        speak("Sorry, I had trouble connecting to the server.");
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech Recognition Error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [isEnabled, speak, stopSpeaking, playSarvamAudio]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, []);
 
   const speakWelcome = useCallback(() => {
     const welcomeMessages = [
@@ -310,6 +418,7 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
   const value = {
     isEnabled,
     isSpeaking,
+    isListening,
     toggleVoice,
     speak,
     stopSpeaking,
@@ -318,6 +427,9 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     speakChartExplanation,
     announceProgress,
     celebrateDiscovery,
+    startListening,
+    stopListening,
+    playSarvamAudio
   };
 
   return (
