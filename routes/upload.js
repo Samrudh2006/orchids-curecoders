@@ -8,6 +8,7 @@ import { parseDocument } from '../services/parserService.js';
 import { chunkText } from '../services/chunkService.js';
 import { generateEmbedding } from '../services/embeddingService.js';
 import { fileURLToPath } from 'url';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,10 +16,7 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
+const uploadDir = os.tmpdir();
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
