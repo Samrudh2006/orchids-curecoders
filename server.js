@@ -810,7 +810,7 @@ app.post('/api/voice-chat', async (req, res) => {
         }
 
         // 1. Send to DeepSeek (Conversational Brain)
-        const systemPrompt = "You are ARIA, a highly intelligent and helpful AI pharmaceutical research assistant for CureCoders. Keep your answers brief, conversational, and directly answer the user's question without formatting like markdown.";
+        const systemPrompt = "You are ARIA, a highly intelligent AI pharmaceutical research assistant for CureCoders. Keep your answers extremely brief and conversational. DO NOT use markdown. YOUR RESPONSE MUST BE UNDER 400 CHARACTERS. THIS IS A HARD SYSTEM LIMIT FOR VOICE SYNTHESIS.";
         
         let aiResponseText = "I'm sorry, I couldn't process that.";
         if (ai) {
@@ -819,7 +819,15 @@ app.post('/api/voice-chat', async (req, res) => {
                 const response = await ai.models.generateContent({
                     contents: `${systemPrompt}\n\nUser asks: ${text}`
                 });
-                aiResponseText = response.text;
+                aiResponseText = response.text || "I didn't quite catch that.";
+                
+                // Safety truncation to absolutely ensure we never exceed 500 chars for Sarvam
+                if (aiResponseText.length > 490) {
+                    // Try to truncate at the last full stop within the limit
+                    const truncated = aiResponseText.substring(0, 490);
+                    const lastPeriod = truncated.lastIndexOf('.');
+                    aiResponseText = lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated + "...";
+                }
             } catch (e) {
                 console.error("AI chat generation failed:", e);
                 aiResponseText = "I'm having trouble connecting to my brain right now.";
@@ -839,13 +847,10 @@ app.post('/api/voice-chat', async (req, res) => {
                     body: JSON.stringify({
                         inputs: [aiResponseText],
                         target_language_code: language,
-                        speaker: 'meera', // 'meera' for female English/Hindi voice
-                        pitch: 0,
-                        pace: 1.05,
-                        loudness: 1.5,
+                        speaker: 'kavya', 
                         speech_sample_rate: 16000,
                         enable_preprocessing: true,
-                        model: 'bulbul:v1' 
+                        model: 'bulbul:v3' 
                     })
                 });
 
@@ -855,21 +860,75 @@ app.post('/api/voice-chat', async (req, res) => {
                         audioBase64 = sarvamData.audios[0];
                     }
                 } else {
-                    console.error("Sarvam API Error:", await sarvamRes.text());
+                    const errText = await sarvamRes.text();
+                    console.error("Sarvam API Error:", errText);
+                    audioBase64 = "ERROR: " + errText;
                 }
             } catch (e) {
                 console.error("Sarvam AI connection failed:", e);
+                audioBase64 = "ERROR: " + e.message;
             }
         }
 
         res.json({
-            text: aiResponseText,
-            audio: audioBase64 // Will be null if Sarvam failed or key is missing
+            text: audioBase64 && audioBase64.startsWith("ERROR:") ? `Sarvam Error: ${audioBase64} | Response: ${aiResponseText}` : aiResponseText,
+            audio: audioBase64 && !audioBase64.startsWith("ERROR:") ? audioBase64 : null,
+            audio_error: audioBase64 && audioBase64.startsWith("ERROR:") ? audioBase64 : null
         });
 
     } catch (error) {
         console.error("Voice Chat execution error:", error);
         res.status(500).json({ error: error.message || "Internal Server Error" });
+    }
+});
+
+// Endpoint just for TTS (when user types text instead of speaking)
+app.post('/api/tts', async (req, res) => {
+    try {
+        let { text, language = 'en-IN' } = req.body;
+        if (!text) return res.status(400).json({ error: 'Text is required' });
+
+        // Clean up markdown and truncate to fit Sarvam limit
+        let cleanText = text.replace(/[*#_]/g, '');
+        if (cleanText.length > 490) {
+            const truncated = cleanText.substring(0, 490);
+            const lastPeriod = truncated.lastIndexOf('.');
+            cleanText = lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated + "...";
+        }
+
+        let audioBase64 = null;
+        if (process.env.SARVAM_API_KEY && process.env.SARVAM_API_KEY !== 'your_sarvam_api_key_here') {
+            try {
+                const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+                    method: 'POST',
+                    headers: {
+                        'api-subscription-key': process.env.SARVAM_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: [cleanText],
+                        target_language_code: language,
+                        speaker: 'kavya',
+                        speech_sample_rate: 16000,
+                        enable_preprocessing: true,
+                        model: 'bulbul:v3'
+                    })
+                });
+
+                if (sarvamRes.ok) {
+                    const sarvamData = await sarvamRes.json();
+                    if (sarvamData.audios && sarvamData.audios.length > 0) {
+                        audioBase64 = sarvamData.audios[0];
+                    }
+                }
+            } catch (e) {
+                console.error("Sarvam API Error:", e);
+            }
+        }
+        res.json({ audio: audioBase64 });
+    } catch (error) {
+        console.error("TTS route error:", error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

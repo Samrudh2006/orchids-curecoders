@@ -184,7 +184,27 @@ Provide a helpful, concise response. If it's about the platform, use the context
       setMessages(prev => [...prev, botMessage]);
       
       if (isEnabled) {
-        speak(response, { rate: 0.9, pitch: 1.0 });
+        // Try fetching high-quality voice for the response
+        try {
+          const ttsRes = await fetch('http://localhost:3001/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: response, language: 'en-IN' })
+          });
+          
+          if (ttsRes.ok) {
+            const data = await ttsRes.json();
+            if (data.audio) {
+              playSarvamAudio(data.audio);
+            } else {
+              speak(response, { rate: 0.9, pitch: 1.0 });
+            }
+          } else {
+            speak(response, { rate: 0.9, pitch: 1.0 });
+          }
+        } catch (e) {
+          speak(response, { rate: 0.9, pitch: 1.0 });
+        }
       }
     } catch (error) {
       const errorMessage: Message = {
