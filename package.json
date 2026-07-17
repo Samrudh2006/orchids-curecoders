@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"node server.js\" \"vite\"",
     "server": "node server.js",
-    "build": "vite build",
+    "build": "npx prisma generate && vite build",
     "preview": "vite preview",
     "test": "vitest run"
   },
