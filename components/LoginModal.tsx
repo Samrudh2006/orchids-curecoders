@@ -331,7 +331,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               theme="outline"
               size="large"
               shape="rectangular"
-              width="100%"
+              width={320}
             />
           </div>
 
