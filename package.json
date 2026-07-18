@@ -17,6 +17,7 @@
     "@langchain/langgraph": "^1.4.7",
     "@prisma/client": "^6.1.0",
     "@react-oauth/google": "^0.13.5",
+    "@supabase/server": "^1.4.0",
     "@tailwindcss/typography": "^0.5.20",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
