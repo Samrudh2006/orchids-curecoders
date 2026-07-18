@@ -131,10 +131,13 @@ const authenticateToken = async (req, res, next) => {
 // User Registration
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
+        
+        email = email.trim().toLowerCase();
+        password = password.trim();
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -168,10 +171,13 @@ app.post('/api/auth/register', async (req, res) => {
 // User Login
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
+        
+        email = email.trim().toLowerCase();
+        password = password.trim();
 
         const user = await prisma.user.findUnique({
             where: { email },

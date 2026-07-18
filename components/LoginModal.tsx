@@ -31,9 +31,16 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     e.preventDefault();
     setError('');
 
-    if (!email || !password) { setError('Please fill in all fields'); return; }
-    if (isRegister && password !== confirmPassword) { setError('Passwords do not match'); return; }
-    if (isRegister && password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) { setError('Please fill in all fields'); return; }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) { setError('Please enter a valid email address'); return; }
+
+    if (isRegister && trimmedPassword !== confirmPassword.trim()) { setError('Passwords do not match'); return; }
+    if (isRegister && trimmedPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
 
     setIsLoading(true);
     try {
@@ -41,7 +48,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       const res  = await fetch(`${getApiUrl()}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Authentication failed');
