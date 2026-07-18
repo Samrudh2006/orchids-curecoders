@@ -12,7 +12,7 @@ Thank you for your interest in contributing to **CureCoders**! Whether you're a 
 > **What is this project?**  
 > CureCoders is an AI-powered, multi-agent pharmaceutical intelligence platform. It turns natural-language research queries into structured insights — market sizing, competitor maps, patent cliffs, clinical-trial filters, and shareable PDF / Excel / PPT reports.
 >
-> 🌐 **Live demo:** [orchids-curecoders.vercel.app](https://orchids-curecoders.vercel.app/)
+> 🌐 **Live demo:** [orchids-curecoders-beige.vercel.app](https://orchids-curecoders-beige.vercel.app/)
 
 ---
 

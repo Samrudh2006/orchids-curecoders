@@ -4,13 +4,13 @@
 
 ### AI-Powered Multi-Agent Research for Drug Discovery, Competitive Intelligence & Market Analysis
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-22c55e?style=for-the-badge&logo=vercel)](https://orchids-curecoders.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-22c55e?style=for-the-badge&logo=vercel)](https://orchids-curecoders-beige.vercel.app/)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](./LICENSE)
 [![Built with TanStack](https://img.shields.io/badge/TanStack-Start-FF4154?style=for-the-badge&logo=react)](https://tanstack.com/start)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-blueviolet?style=for-the-badge)](./CONTRIBUTING.md)
 
-**🌐 Live App:** [orchids-curecoders.vercel.app](https://orchids-curecoders.vercel.app/)
+**🌐 Live App:** [orchids-curecoders-beige.vercel.app](https://orchids-curecoders-beige.vercel.app/)
 
 </div>
 
@@ -90,7 +90,7 @@
 
 ### 🔌 Data Sources (Mock APIs)
 
-Connectors for FDA, ClinicalTrials.gov, USPTO, EMA, PubMed, EvaluatePharma-style endpoints — see [/apis](https://orchids-curecoders.vercel.app/apis).
+Connectors for FDA, ClinicalTrials.gov, USPTO, EMA, PubMed, EvaluatePharma-style endpoints — see [/apis](https://orchids-curecoders-beige.vercel.app/apis).
 
 ---
 
@@ -120,7 +120,7 @@ Connectors for FDA, ClinicalTrials.gov, USPTO, EMA, PubMed, EvaluatePharma-style
 
 Frontend: **TanStack Start (React 19 + Vite 7)** · Edge runtime: **Cloudflare Workers** · Styling: **Tailwind v4 + shadcn/ui**
 
-See the live diagram at [/architecture](https://orchids-curecoders.vercel.app/architecture).
+See the live diagram at [/architecture](https://orchids-curecoders-beige.vercel.app/architecture).
 
 ---
 
@@ -188,7 +188,7 @@ npm run preview    # preview the production build
 | 📈 **Market (Evaluate-style)** | Sizing, share, forecasts | `/api/mock/market` |
 | 💊 **EMA** | EU approvals & pipelines | `/api/mock/ema` |
 
-Browse the interactive catalog at [/apis](https://orchids-curecoders.vercel.app/apis).
+Browse the interactive catalog at [/apis](https://orchids-curecoders-beige.vercel.app/apis).
 
 ---
 
@@ -196,10 +196,10 @@ Browse the interactive catalog at [/apis](https://orchids-curecoders.vercel.app/
 
 | Format | Use case | Where |
 |---|---|---|
-| 📄 **PDF** | Executive briefings | [/reports](https://orchids-curecoders.vercel.app/reports) |
-| 📊 **Excel** | Models & raw tables | [/reports](https://orchids-curecoders.vercel.app/reports) |
-| 🎬 **5-Slide PPT** | Product journey deck | [/journey](https://orchids-curecoders.vercel.app/journey) |
-| 📊 **Sample Outputs** | Live demos | [/samples](https://orchids-curecoders.vercel.app/samples) |
+| 📄 **PDF** | Executive briefings | [/reports](https://orchids-curecoders-beige.vercel.app/reports) |
+| 📊 **Excel** | Models & raw tables | [/reports](https://orchids-curecoders-beige.vercel.app/reports) |
+| 🎬 **5-Slide PPT** | Product journey deck | [/journey](https://orchids-curecoders-beige.vercel.app/journey) |
+| 📊 **Sample Outputs** | Live demos | [/samples](https://orchids-curecoders-beige.vercel.app/samples) |
 
 ---
 
@@ -269,7 +269,7 @@ This project is made publicly visible for **demonstration and portfolio purposes
 
 **Built with ❤️ for pharmaceutical researchers worldwide 🧬**
 
-[🌐 Live Demo](https://orchids-curecoders.vercel.app/) · [🐛 Report Bug](https://github.com/Samrudh2006/orchids-curecoders/issues) · [💡 Request Feature](https://github.com/Samrudh2006/orchids-curecoders/issues)
+[🌐 Live Demo](https://orchids-curecoders-beige.vercel.app/) · [🐛 Report Bug](https://github.com/Samrudh2006/orchids-curecoders/issues) · [💡 Request Feature](https://github.com/Samrudh2006/orchids-curecoders/issues)
 
 </div>
 

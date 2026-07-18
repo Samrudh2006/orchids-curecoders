@@ -7,7 +7,7 @@
 | `1.x` (latest) | ✅ Yes |
 | `< 1.0` | ❌ No |
 
-The **CureCoders** demo at [orchids-curecoders.vercel.app](https://orchids-curecoders.vercel.app/) always tracks the latest `main` build. Older deployments are not patched.
+The **CureCoders** demo at [orchids-curecoders-beige.vercel.app](https://orchids-curecoders-beige.vercel.app/) always tracks the latest `main` build. Older deployments are not patched.
 
 ---
 
