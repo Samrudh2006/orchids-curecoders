@@ -226,10 +226,10 @@ See [SECURITY.md](./SECURITY.md) for responsible-disclosure details.
 | ✅ | Document upload & ingest UI |
 | ✅ | PDF / Excel / PPT export demos |
 | ✅ | 30+ instant query catalog |
-| 🔜 | Live LLM provider integration |
-| 🔜 | Persistent project workspaces |
-| 🔜 | Real FDA / ClinicalTrials.gov connectors |
-| 🔜 | Team collaboration & comments |
+| ✅ | Live LLM provider integration |
+| ✅ | Persistent project workspaces |
+| ✅ | Real FDA / ClinicalTrials.gov connectors |
+| ✅ | Team collaboration & comments |
 | 🔜 | Citation graph & source provenance |
 | 🔜 | Custom agent builder (no-code) |
 
