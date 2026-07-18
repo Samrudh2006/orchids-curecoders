@@ -6,7 +6,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-22c55e?style=for-the-badge&logo=vercel)](https://orchids-curecoders-beige.vercel.app/)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](./LICENSE)
-[![Built with TanStack](https://img.shields.io/badge/TanStack-Start-FF4154?style=for-the-badge&logo=react)](https://tanstack.com/start)
+[![Built with Vite](https://img.shields.io/badge/Vite-React-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-blueviolet?style=for-the-badge)](./CONTRIBUTING.md)
 
@@ -118,7 +118,7 @@ Connectors for FDA, ClinicalTrials.gov, USPTO, EMA, PubMed, EvaluatePharma-style
                     └────────────────────┘
 ```
 
-Frontend: **TanStack Start (React 19 + Vite 7)** · Edge runtime: **Cloudflare Workers** · Styling: **Tailwind v4 + shadcn/ui**
+Frontend: **React 19 + Vite 6 + React Router** · Backend: **Node.js + Express** · Styling: **Tailwind v4 + shadcn/ui**
 
 See the live diagram at [/architecture](https://orchids-curecoders-beige.vercel.app/architecture).
 
@@ -132,16 +132,16 @@ See the live diagram at [/architecture](https://orchids-curecoders-beige.vercel.
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![TanStack](https://img.shields.io/badge/TanStack_Start-1.x-FF4154?logo=react&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-7.x-CA4245?logo=reactrouter&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white)
 ![shadcn/ui](https://img.shields.io/badge/shadcn/ui-latest-000000)
 
 **Infrastructure**
 
 ![Vercel](https://img.shields.io/badge/Vercel-Hosting-000000?logo=vercel)
-![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
-![TanStack Query](https://img.shields.io/badge/TanStack-Query-FF4154?logo=react)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-Validation-3E67B1)
 
 </div>
@@ -171,7 +171,7 @@ npm run dev
 ### 📦 Production Build
 
 ```bash
-npm run build      # bundles for Cloudflare Workers
+npm run build      # bundles the React app for production
 npm run preview    # preview the production build
 ```
 

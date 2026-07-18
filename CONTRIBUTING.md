@@ -136,7 +136,7 @@ We follow **[Conventional Commits](https://www.conventionalcommits.org/)**.
 
 - 📘 **Language:** TypeScript strict mode — no `any`.
 - ⚛️ **Components:** React 19 functional components with hooks.
-- 🧭 **Routing:** TanStack Start file-based routes in `src/routes/`.
+- 🧭 **Routing:** React Router DOM for client-side routing in `routes/`.
 - 🎨 **Styling:** Tailwind CSS + semantic tokens from `src/styles.css`.
 - 📁 **Naming:** PascalCase for components, camelCase for functions and variables.
 - 📦 **Imports:** Use `@/` path aliases.

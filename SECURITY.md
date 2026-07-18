@@ -68,7 +68,7 @@ Please report via one of the following methods:
 
 ### Infrastructure
 - ✅ **HTTPS is enforced** on all deployed routes.
-- ✅ Edge runtime processing — no long-lived stateful server processes where appropriate.
+- ✅ Stateless server design — no long-lived stateful server processes where appropriate.
 - ✅ Immutable asset caching with versioned URLs.
 - ✅ **Dependabot** alerts are enabled for continuous dependency vulnerability monitoring.
 
