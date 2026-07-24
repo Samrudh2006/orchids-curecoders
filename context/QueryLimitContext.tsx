@@ -16,7 +16,7 @@ interface QueryLimitContextType {
 const QueryLimitContext = createContext<QueryLimitContextType | undefined>(undefined);
 
 const PLAN_LIMITS = {
-  free: 3,
+  free: 999999,
   pro: 999999,
   enterprise: 999999
 };
