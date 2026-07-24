@@ -75,90 +75,6 @@ const AIChatbot: React.FC = () => {
     }
   }, [isOpen]);
 
-  const getChatbotResponse = async (userMessage: string): Promise<string> => {
-    const appKnowledge = `
-    CureCoders is an AI-powered pharmaceutical intelligence platform that provides:
-    
-    CORE FEATURES:
-    - Multi-Agent AI System: Deploys specialized agents for Market Data, Patents, Clinical Trials, and Competitive Intelligence
-    - Advanced PDF Reports: Professional reports with Chart.js visualizations, market analysis, and strategic insights  
-    - Document Management: Upload and analyze internal documents (PDF, Word, Excel, PowerPoint)
-    - Excel/PowerPoint Export: Multi-sheet workbooks and presentation-ready slides
-    - Voice Assistant ARIA: Professional pharmaceutical guidance and feature explanations
-    - Dark/Light Theme: Professional styling optimized for pharmaceutical industry
-    - Advanced Search: Powerful filtering and search capabilities across research history
-    - Drag & Drop Upload: Intuitive document management with visual feedback
-
-    PHARMACEUTICAL FOCUS:
-    - Market Intelligence: Competitive landscape analysis, market sizing, growth rates
-    - Patent Analysis: IP landscape assessment, freedom to operate, expiration tracking
-    - Clinical Trial Data: Phase analysis, endpoint tracking, regulatory milestones
-    - Competitive Research: Competitor strategies, product portfolios, market positioning
-    
-    HOW TO USE:
-    1. Enter pharmaceutical research query in the workspace
-    2. AI agents analyze different aspects (market, patents, clinical, competitive)
-    3. Comprehensive results with charts and strategic insights
-    4. Export professional reports for stakeholders
-    5. Upload internal documents for integrated analysis
-    
-    The platform is designed for pharmaceutical professionals, researchers, and strategic decision makers.
-    `;
-
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('how') && (lowerMessage.includes('use') || lowerMessage.includes('work'))) {
-      return "To use CureCoders:\n\n1. **Enter Query**: Type your pharmaceutical research question in the workspace\n2. **AI Analysis**: Our specialized agents analyze market data, patents, clinical trials, and competitive intelligence\n3. **Review Results**: Get comprehensive insights with charts and visualizations\n4. **Export Reports**: Generate professional PDFs, Excel, or PowerPoint presentations\n5. **Upload Documents**: Add your internal files for integrated analysis\n\nTry queries like 'diabetes drug market' or 'COVID-19 vaccine patents' to see the system in action!";
-    }
-    
-    if (lowerMessage.includes('agent') || lowerMessage.includes('ai system')) {
-      return "CureCoders uses a **Multi-Agent AI System** with specialized agents:\n\n🔬 **Market Data Agent**: Analyzes market size, growth rates, competitive landscape\n📋 **Patent Agent**: Tracks IP landscape, expiration dates, freedom to operate\n🏥 **Clinical Agent**: Monitors trials, phases, endpoints, regulatory milestones\n🏢 **Competitive Agent**: Assesses competitor strategies and positioning\n\nThey work together to provide comprehensive pharmaceutical intelligence!";
-    }
-    
-    if (lowerMessage.includes('voice') || lowerMessage.includes('aria')) {
-      return "**ARIA** is your AI voice assistant! Features:\n\n🎙️ **Voice Guidance**: Explains features and guides you through the platform\n📊 **Chart Narration**: Describes data visualizations and insights\n🗣️ **Status Updates**: Announces when agents complete their analysis\n⚙️ **Easy Control**: Click the microphone button to enable/disable\n\nARIA makes complex pharmaceutical data more accessible and helps during presentations!";
-    }
-    
-    if (lowerMessage.includes('export') || lowerMessage.includes('report')) {
-      return "**Professional Export Options**:\n\n📄 **PDF Reports**: Interactive charts, market analysis, patent landscapes\n📊 **Excel Workbooks**: Multi-sheet detailed data, competitive analysis\n📋 **PowerPoint**: Presentation-ready slides for stakeholder meetings\n\nAll exports include your CureCoders branding and professional pharmaceutical styling!";
-    }
-    
-    if (lowerMessage.includes('document') || lowerMessage.includes('upload')) {
-      return "**Document Management**:\n\n📁 **Supported Formats**: PDF, Word, Excel, PowerPoint, text files\n🎯 **AI Integration**: Extracts insights and integrates with research queries\n💾 **Secure Storage**: Documents stored locally for privacy\n🔍 **Smart Analysis**: AI analyzes your internal documents alongside external data\n\nJust drag & drop files or use the upload button below!";
-    }
-
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        return "I'm here to help! Ask me about CureCoders features, pharmaceutical research, or how to use the platform. For technical questions, I can guide you through the multi-agent system, voice assistant, or export options.";
-      }
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are a helpful AI assistant for CureCoders, a pharmaceutical intelligence platform. Context about the platform: ${appKnowledge}
-
-User question: ${userMessage}
-
-Provide a helpful, concise response. If it's about the platform, use the context above. For general questions, provide accurate information. Keep responses conversational and helpful.`
-            }]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 
-        "I'm here to help with CureCoders! Ask me about features, pharmaceutical research, or general questions.";
-    } catch (error) {
-      return "I'm your CureCoders assistant! I can help with:\n\n• Platform features and how to use them\n• Pharmaceutical research guidance\n• Multi-agent AI system explanation\n• Voice assistant and export options\n• General questions about drug discovery\n\nWhat would you like to know?";
-    }
-  };
-
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
@@ -170,50 +86,50 @@ Provide a helpful, concise response. If it's about the platform, use the context
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const response = await getChatbotResponse(inputValue);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
+      // Send to backend /api/voice-chat for both text and Sarvam audio
+      const res = await fetch('http://localhost:3001/api/voice-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: currentInput, language: 'en-IN' })
+      });
       
-      if (isEnabled) {
-        // Try fetching high-quality voice for the response
-        try {
-          const ttsRes = await fetch('http://localhost:3001/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: response, language: 'en-IN' })
-          });
-          
-          if (ttsRes.ok) {
-            const data = await ttsRes.json();
-            if (data.audio) {
-              playSarvamAudio(data.audio);
-            } else {
-              speak(response, { rate: 0.9, pitch: 1.0 });
-            }
-          } else {
-            speak(response, { rate: 0.9, pitch: 1.0 });
+      if (res.ok) {
+        const data = await res.json();
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.text || "Sorry, I had trouble processing that.",
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+
+        if (isEnabled) {
+          if (data.audio) {
+            playSarvamAudio(data.audio);
+          } else if (data.text) {
+            speak(data.text);
           }
-        } catch (e) {
-          speak(response, { rate: 0.9, pitch: 1.0 });
         }
+      } else {
+        throw new Error('Backend failed');
       }
     } catch (error) {
+      console.error("Chat error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm here to help! Ask me about CureCoders features, pharmaceutical research, or how to use the platform.",
+        content: "Sorry, I had trouble connecting to the server.",
         sender: 'bot',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
+      if (isEnabled) {
+        speak("Sorry, I had trouble connecting to the server.");
+      }
     } finally {
       setIsLoading(false);
     }
