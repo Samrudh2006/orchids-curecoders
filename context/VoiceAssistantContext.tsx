@@ -18,6 +18,7 @@ interface VoiceAssistantContextType {
   startListening: () => void;
   stopListening: () => void;
   playSarvamAudio: (base64Audio: string) => void;
+  speakSarvam: (text: string) => void;
 }
 
 interface SpeechOptions {
@@ -215,6 +216,25 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
       setIsSpeaking(false);
     }
   }, [isEnabled, stopSpeaking]);
+
+  const speakSarvam = useCallback(async (text: string) => {
+    if (!isEnabled || !text) return;
+    try {
+      const response = await fetch(`${getApiUrl()}/api/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.audio) {
+          playSarvamAudio(data.audio);
+        }
+      }
+    } catch (error) {
+      console.error("Error calling Sarvam TTS for text:", error);
+    }
+  }, [isEnabled, playSarvamAudio]);
 
   const startListening = useCallback(() => {
     if (!isEnabled || typeof window === 'undefined') return;
@@ -430,7 +450,8 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
     celebrateDiscovery,
     startListening,
     stopListening,
-    playSarvamAudio
+    playSarvamAudio,
+    speakSarvam
   };
 
   return (

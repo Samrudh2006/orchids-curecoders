@@ -38,6 +38,7 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { canQuery, incrementQuery } = useQueryLimit();
+    const { speakSarvam } = useVoiceAssistant();
     const [prompt, setPrompt] = useState('');
     const [currentRunPrompt, setCurrentRunPrompt] = useState('');
     const [agents, setAgents] = useState<Agent[]>([]);
@@ -176,13 +177,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
 
             let finalSummary = '';
+            let finalVoiceSummary = '';
 
             if (successfulResults.length > 0) {
                 const synthesisAgent: Agent = { id: 'synth', name: AgentName.SYNTHESIS, status: AgentStatus.RUNNING, result: null };
                 setAgents(prev => [...prev, synthesisAgent]);
 
-                finalSummary = await geminiService.synthesizeResults(successfulResults, currentPrompt);
+                const synthesisData = await geminiService.synthesizeResults(successfulResults, currentPrompt);
+                finalSummary = synthesisData.synthesis;
+                finalVoiceSummary = synthesisData.voiceSummary;
+                
                 setSummary(finalSummary);
+                if (finalVoiceSummary) {
+                    speakSarvam(finalVoiceSummary);
+                }
+                
                 setAgents(prev => prev.map(a => a.id === 'synth' ? {...a, status: AgentStatus.DONE} : a));
 
                 geminiService.initializeChat(currentPrompt, successfulResults, finalSummary);

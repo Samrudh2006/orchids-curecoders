@@ -113,7 +113,10 @@ export const synthesizeResults = async (results: AgentResultData[], prompt: stri
         }
 
         const data = await response.json();
-        return data.synthesis || '';
+        return {
+            synthesis: data.synthesis,
+            voiceSummary: data.voiceSummary
+        };
     } catch (error) {
         console.error("Error in synthesizeResults:", error);
         throw new AgentError(

@@ -6,15 +6,9 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
-import { createRequire } from 'module';
 import { OAuth2Client } from 'google-auth-library';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
 import ExcelJS from 'exceljs';
 import pptxgen from 'pptxgenjs';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import bookmarksRouter from './routes/bookmarks.js';
 import collaborationRouter from './routes/collaboration.js';
@@ -24,11 +18,6 @@ import chatRouter from './routes/chat.js';
 
 import { searchSimilarChunks } from './services/vectorSearch.js';
 import { generateEmbedding } from './services/embeddingService.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
 
 const app = express();
 app.use(cors());
@@ -89,13 +78,20 @@ class CustomAIClient {
         };
     }
 }
-
-// Gemini client initialization
-const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
-if (!API_KEY) {
-    console.warn("WARNING: No Gemini API Key found in env variables! Falling back to simulated AI analysis.");
+const userKeys = [
+    'sk-QjBqRcUMhrMAcomUIU9tZjQ7YCEVjH3Kk0HnuQgbzlFcV3LJ',
+    'sk-RqP8yQZqEtMJv61oSwnyPxynRFUuiFYkpdj5ieZrR75qCebe',
+    'sk-Uw2Ey4NQxQJHMuDk6evAtpf0aW7pukNGhofXjFnnTyaZ8laQ'
+];
+let keyIndex = 0;
+function getNextKey() {
+    const key = userKeys[keyIndex];
+    keyIndex = (keyIndex + 1) % userKeys.length;
+    return key;
 }
-const defaultModel = process.env.DEFAULT_AI_MODEL || "glm4.7";
+
+const API_KEY = process.env.GROQ_API_KEY || getNextKey();
+const defaultModel = process.env.DEFAULT_AI_MODEL || 'llama-3.3-70b-versatile';
 const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.hcnsec.cn/v1";
 
 const ai = API_KEY ? new CustomAIClient(API_KEY, defaultModel, defaultBaseUrl) : null;
@@ -105,14 +101,11 @@ function getAgentAi(agentName) {
     const modelEnvKey = `${agentName.toUpperCase()}_MODEL`;
     const baseUrlEnvKey = `${agentName.toUpperCase()}_BASE_URL`;
 
-    const agentKey = process.env[envKey] || API_KEY;
-    const modelName = process.env[modelEnvKey] || defaultModel;
+    const agentKey = process.env[envKey] || API_KEY || getNextKey();
     const baseUrl = process.env[baseUrlEnvKey] || defaultBaseUrl;
+    const model = process.env[modelEnvKey] || defaultModel;
 
-    if (agentKey) {
-        return new CustomAIClient(agentKey, modelName, baseUrl);
-    }
-    return ai;
+    return agentKey ? new CustomAIClient(agentKey, model, baseUrl) : null;
 }
 
 // ==========================================
@@ -1176,6 +1169,7 @@ app.post('/api/synthesize', async (req, res) => {
         if (!prompt) return res.status(400).json({ error: 'prompt is required' });
 
         let synthesis = '';
+        let voiceSummary = '';
         if (ai && results) {
             try {
                 const response = await ai.models.generateContent({
@@ -1183,6 +1177,12 @@ app.post('/api/synthesize', async (req, res) => {
                     contents: `Synthesize a professional report based on the user's prompt "${prompt}" and these gathered results:\n${JSON.stringify(results, null, 2)}`
                 });
                 synthesis = response.text;
+
+                const voiceResponse = await ai.models.generateContent({
+                    model: "gemini-2.0-flash",
+                    contents: `Based on this report, write a 2-3 sentence friendly summary that an AI voice assistant will speak out loud to the user. Do not use markdown or complex formatting:\n${synthesis}`
+                });
+                voiceSummary = voiceResponse.text;
             } catch (e) {
                 console.error("AI Synthesis failed:", e);
             }
@@ -1190,9 +1190,10 @@ app.post('/api/synthesize', async (req, res) => {
 
         if (!synthesis) {
             synthesis = `### Synthesis for ${prompt}\n\nNo Gemini API Key is configured on the backend server. A direct analysis is not possible. Presenting compiled datasets.`;
+            voiceSummary = "Here is the compiled data for your request.";
         }
 
-        res.json({ synthesis });
+        res.json({ synthesis, voiceSummary });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
