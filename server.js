@@ -61,16 +61,21 @@ class CustomAIClient {
                     promptText += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this schema: ${JSON.stringify(config.responseSchema || {})}. Do NOT wrap the JSON in markdown blocks (e.g. \`\`\`json). Return pure, raw JSON only.`;
                 }
 
+                const requestBody = {
+                    model: this.modelName,
+                    messages: [{ role: 'user', content: promptText }]
+                };
+                if (config && config.responseMimeType === "application/json") {
+                    requestBody.response_format = { type: "json_object" };
+                }
+
                 const response = await fetch(`${this.baseUrl}/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${this.apiKey}`
                     },
-                    body: JSON.stringify({
-                        model: this.modelName,
-                        messages: [{ role: 'user', content: promptText }]
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 if (!response.ok) {
