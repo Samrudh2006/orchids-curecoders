@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { getApiUrl } from '../utils/api';
+import getApiUrl from '../services/apiConfig';
 
 interface VoiceAssistantContextType {
   isEnabled: boolean;

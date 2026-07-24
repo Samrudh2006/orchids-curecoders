@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Sparkles, Settings, Mic, MicOff, Trash2 } from './Icons';
 import { useVoiceAssistant } from '../context/VoiceAssistantContext';
 import RichChatRenderer from './RichChatRenderer';
-import { getApiUrl } from '../utils/api';
+import getApiUrl from '../services/apiConfig';
 
 interface Message {
   id: string;
