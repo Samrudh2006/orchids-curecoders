@@ -164,7 +164,7 @@ app.post('/api/auth/register', async (req, res) => {
         res.status(201).json({ token, user: { id: user.id, email: user.email, role: user.role }, workspaces: user.workspaces });
     } catch (error) {
         console.error("Register Error:", error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
@@ -191,7 +191,7 @@ app.post('/api/auth/login', async (req, res) => {
         res.json({ token, user: { id: user.id, email: user.email, role: user.role }, workspaces: user.workspaces });
     } catch (error) {
         console.error("Login Error:", error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
@@ -244,7 +244,7 @@ app.post('/api/auth/google', async (req, res) => {
 
     } catch (error) {
         console.error("Google Auth Error:", error);
-        res.status(500).json({ error: 'Google Authentication Failed' });
+        res.status(500).json({ error: error.message || 'Google Authentication Failed' });
     }
 });
 
