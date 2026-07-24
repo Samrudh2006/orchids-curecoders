@@ -65,17 +65,33 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('');
     setIsLoading(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/auth/google`, {
+      if (!credentialResponse?.credential) {
+        throw new Error('No credential received from Google');
+      }
+
+      const apiUrl = getApiUrl();
+      const endpoint = `${apiUrl}/api/auth/google`;
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: credentialResponse.credential }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Google Authentication failed');
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Google Authentication failed');
+      }
+
+      if (!data.token || !data.user) {
+        throw new Error('Invalid response from server');
+      }
+
       onLoginSuccess(data.token, data.user);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Something went wrong with Google Login');
+      setError(err.message || 'Google Login failed. Please try again or use email/password.');
     } finally {
       setIsLoading(false);
     }
