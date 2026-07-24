@@ -913,7 +913,7 @@ app.post('/api/voice-chat', async (c) => {
                     },
                     body: JSON.stringify({
                         inputs: [aiResponseText],
-                        target_language_code: 'hi-IN',
+                        target_language_code: language,
                         speaker: 'kavya', 
                         speech_sample_rate: 16000,
                         enable_preprocessing: true,
