@@ -121,12 +121,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const runMasterAgent = useCallback(async (currentPrompt: string) => {
         if (!currentPrompt.trim() || isOrchestrating) return;
 
-        if (!localStorage.getItem('curecoders_auth_token')) {
-            // Trigger the login modal
-            window.dispatchEvent(new CustomEvent('open-login'));
-            return;
-        }
-
         setIsOrchestrating(true);
         setIsReportReady(false);
         setAgents([]);
