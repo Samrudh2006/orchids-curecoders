@@ -41,7 +41,14 @@ app.use('*', cors());
 const PORT = 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'curecoders_super_secret_key_2026';
 
-const prisma = new PrismaClient();
+const dbUrl = process.env.DATABASE_URL || "postgresql://postgres.bxiorkxehvmjsmemoshm:Samrudh%40701377@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1";
+const prisma = new PrismaClient({
+    datasources: {
+        db: {
+            url: dbUrl,
+        },
+    },
+});
 
 // Mount Modular Routes
 app.route('/api/bookmarks', bookmarksRouter);
