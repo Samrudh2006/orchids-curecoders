@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Sparkles, Settings, Mic, MicOff, Trash2 } from './Icons';
 import { useVoiceAssistant } from '../context/VoiceAssistantContext';
 import RichChatRenderer from './RichChatRenderer';
+import { getApiUrl } from '../services/apiConfig';
 
 interface Message {
   id: string;
@@ -186,7 +187,7 @@ Provide a helpful, concise response. If it's about the platform, use the context
       if (isEnabled) {
         // Try fetching high-quality voice for the response
         try {
-          const ttsRes = await fetch('http://localhost:3001/api/tts', {
+          const ttsRes = await fetch(`${getApiUrl()}/api/tts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: response, language: 'en-IN' })
@@ -263,7 +264,7 @@ Provide a helpful, concise response. If it's about the platform, use the context
       setIsLoading(true);
 
       try {
-        const res = await fetch('http://localhost:3001/api/voice-chat', {
+        const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: transcript, language: 'en-IN' })

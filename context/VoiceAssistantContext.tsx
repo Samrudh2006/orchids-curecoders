@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { getApiUrl } from '../services/apiConfig';
 
 interface VoiceAssistantContextType {
   isEnabled: boolean;
@@ -246,7 +247,7 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
       
       // Send transcript to backend
       try {
-        const res = await fetch('http://localhost:3001/api/voice-chat', {
+        const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: transcript, language: 'en-IN' })
