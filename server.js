@@ -196,7 +196,8 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Google OAuth Client
-const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
+const googleClientId = process.env.VITE_GOOGLE_CLIENT_ID || '744896976826-kaleqhlhvfmt9sc81ojid7o9sara7a6u.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(googleClientId);
 
 // Google Sign-In / Sign-Up
 app.post('/api/auth/google', async (req, res) => {
@@ -206,7 +207,7 @@ app.post('/api/auth/google', async (req, res) => {
 
         const ticket = await googleClient.verifyIdToken({
             idToken: token,
-            audience: process.env.VITE_GOOGLE_CLIENT_ID,
+            audience: googleClientId,
         });
         const payload = ticket.getPayload();
         if (!payload || !payload.email) {
