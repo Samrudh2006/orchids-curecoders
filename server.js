@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import { GoogleGenAI, Type } from '@google/genai';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -24,8 +24,6 @@ import chatRouter from './routes/chat.js';
 
 import { searchSimilarChunks } from './services/vectorSearch.js';
 import { generateEmbedding } from './services/embeddingService.js';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,8 +54,13 @@ class CustomAIClient {
         this.modelName = modelName;
         this.models = {
             generateContent: async (params) => {
-                const { contents } = params;
-                const promptText = typeof contents === 'string' ? contents : JSON.stringify(contents);
+                const { contents, config } = params;
+                let promptText = typeof contents === 'string' ? contents : JSON.stringify(contents);
+
+                if (config && config.responseMimeType === "application/json") {
+                    promptText += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this schema: ${JSON.stringify(config.responseSchema || {})}. Do NOT wrap the JSON in markdown blocks (e.g. \`\`\`json). Return pure, raw JSON only.`;
+                }
+
                 const response = await fetch(`${this.baseUrl}/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -394,7 +397,35 @@ function cosineSimilarity(vecA, vecB) {
 // ==========================================
 
 // 1. Clinical Trials API (ClinicalTrials.gov v2)
-async function fetchClinicalTrials(query) {
+async function fetchClinicalTrials(query, aiClient) {
+    if (aiClient) {
+        try {
+            const schema = {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        title: { type: Type.STRING },
+                        phase: { type: Type.STRING },
+                        status: { type: Type.STRING },
+                        sponsor: { type: Type.STRING },
+                        summary: { type: Type.STRING }
+                    },
+                    required: ['id', 'title', 'phase', 'status', 'sponsor', 'summary']
+                }
+            };
+            const response = await aiClient.models.generateContent({
+                contents: `Find or simulate 3 clinical trials for: "${query}". Return pure JSON matching schema.`,
+                config: { responseMimeType: "application/json", responseSchema: schema }
+            });
+            return JSON.parse(response.text.replace(/```json|```/g, "").trim());
+        } catch (e) {
+            console.error("AI ClinicalTrials fetch failed, using fallback:", e);
+        }
+    }
+    
+    // Fallback logic
     try {
         const url = `https://clinicaltrials.gov/api/v2/studies?query.term=${encodeURIComponent(query)}&pageSize=5`;
         const response = await fetch(url);
@@ -430,14 +461,40 @@ async function fetchClinicalTrials(query) {
 
 function getFallbackTrials(query) {
     return [
-        { id: "NCT05912341", title: `A Safety & Efficacy Evaluation of ${query} Formulations in Adults`, phase: "Phase 2", status: "Recruiting", sponsor: "Novartis Pharmaceuticals" },
-        { id: "NCT05822152", title: `Comparative Study of ${query} vs Standard of Care for Therapy`, phase: "Phase 3", status: "Active, not recruiting", sponsor: "Eli Lilly and Company" },
-        { id: "NCT05291233", title: `Long-term Cardiovascular Tolerability Profile of ${query}`, phase: "Phase 4", status: "Completed", sponsor: "Novo Nordisk A/S" }
+        { id: "NCT05912341", title: `A Safety & Efficacy Evaluation of ${query} Formulations in Adults`, phase: "Phase 2", status: "Recruiting", sponsor: "Novartis Pharmaceuticals", summary: "" },
+        { id: "NCT05822152", title: `Comparative Study of ${query} vs Standard of Care for Therapy`, phase: "Phase 3", status: "Active, not recruiting", sponsor: "Eli Lilly and Company", summary: "" },
+        { id: "NCT05291233", title: `Long-term Cardiovascular Tolerability Profile of ${query}`, phase: "Phase 4", status: "Completed", sponsor: "Novo Nordisk A/S", summary: "" }
     ];
 }
 
 // 2. Patent search (PatentsView API)
-async function fetchPatents(query) {
+async function fetchPatents(query, aiClient) {
+    if (aiClient) {
+        try {
+            const schema = {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        url: { type: Type.STRING },
+                        expiryDate: { type: Type.STRING },
+                        owner: { type: Type.STRING },
+                        ftRisk: { type: Type.STRING }
+                    },
+                    required: ['title', 'url', 'expiryDate', 'owner', 'ftRisk']
+                }
+            };
+            const response = await aiClient.models.generateContent({
+                contents: `Find or simulate 3 pharmaceutical patents for: "${query}". Return pure JSON matching schema. ftRisk should be High, Medium, or Low.`,
+                config: { responseMimeType: "application/json", responseSchema: schema }
+            });
+            return JSON.parse(response.text.replace(/```json|```/g, "").trim());
+        } catch (e) {
+            console.error("AI Patents fetch failed, using fallback:", e);
+        }
+    }
+
     try {
         const url = `https://api.patentsview.org/patents/query?q={"_or":[{"patent_title":"${query}"},{"patent_abstract":"${query}"}]}&f=["patent_number","patent_title","patent_date","patent_abstract","assignee_organization"]&o={"limit":5}`;
         const response = await fetch(url);
@@ -480,9 +537,43 @@ function getFallbackPatents(query) {
 }
 
 // 3. EXIM Sourcing data (UN Comtrade preview helper)
-async function fetchTradeData(query) {
-    // Comtrade API often requires custom headers/subscription tokens.
-    // We return clean mock trade distributions mapped directly to the queried term.
+async function fetchTradeData(query, aiClient) {
+    if (aiClient) {
+        try {
+            const schema = {
+                type: Type.OBJECT,
+                properties: {
+                    apiName: { type: Type.STRING },
+                    exportVolumes: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: { country: { type: Type.STRING }, value: { type: Type.STRING } },
+                            required: ['country', 'value']
+                        }
+                    },
+                    importDependency: { type: Type.STRING },
+                    topSourcingCountries: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: { country: { type: Type.STRING }, share: { type: Type.STRING } },
+                            required: ['country', 'share']
+                        }
+                    }
+                },
+                required: ['apiName', 'exportVolumes', 'importDependency', 'topSourcingCountries']
+            };
+            const response = await aiClient.models.generateContent({
+                contents: `Generate sourcing and trade data (export volumes, import dependency, top sourcing countries) for: "${query}". Return pure JSON matching schema.`,
+                config: { responseMimeType: "application/json", responseSchema: schema }
+            });
+            return JSON.parse(response.text.replace(/```json|```/g, "").trim());
+        } catch (e) {
+            console.error("AI TradeData fetch failed, using fallback:", e);
+        }
+    }
+
     return {
         apiName: query,
         exportVolumes: [
@@ -500,8 +591,34 @@ async function fetchTradeData(query) {
     };
 }
 
-// 4. Web signals (Tavily search or fallback)
-async function fetchWebSignals(query) {
+// 4. Web Signals (Tavily search or fallback)
+async function fetchWebSignals(query, aiClient) {
+    if (aiClient) {
+        try {
+            const schema = {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        url: { type: Type.STRING },
+                        source: { type: Type.STRING },
+                        excerpt: { type: Type.STRING },
+                        sentiment: { type: Type.NUMBER }
+                    },
+                    required: ['title', 'url', 'source', 'excerpt', 'sentiment']
+                }
+            };
+            const response = await aiClient.models.generateContent({
+                contents: `Generate 3 recent web news signals for: "${query}". Return pure JSON matching schema. sentiment should be 0.0 to 1.0.`,
+                config: { responseMimeType: "application/json", responseSchema: schema }
+            });
+            return JSON.parse(response.text.replace(/```json|```/g, "").trim());
+        } catch (e) {
+            console.error("AI WebSignals fetch failed, using fallback:", e);
+        }
+    }
+
     if (process.env.TAVILY_API_KEY) {
         try {
             const response = await fetch("https://api.tavily.com/search", {
@@ -696,16 +813,16 @@ app.post('/api/generate', async (req, res) => {
                         data = { market_data: await fetchMarketData(prompt, getAgentAi('market_data')) };
                         break;
                     case 'patents':
-                        data = { patents: await fetchPatents(prompt) };
+                        data = { patents: await fetchPatents(prompt, getAgentAi('patents')) };
                         break;
                     case 'clinical_trials':
-                        data = { trials: await fetchClinicalTrials(prompt) };
+                        data = { trials: await fetchClinicalTrials(prompt, getAgentAi('clinical_trials')) };
                         break;
                     case 'web_signals':
-                        data = { webSignals: await fetchWebSignals(prompt) };
+                        data = { webSignals: await fetchWebSignals(prompt, getAgentAi('web_signals')) };
                         break;
                     case 'exim_sourcing':
-                        data = { exim: await fetchTradeData(prompt) };
+                        data = { exim: await fetchTradeData(prompt, getAgentAi('exim_sourcing')) };
                         break;
                     case 'internal_documents':
                         // RAG Search
@@ -996,19 +1113,19 @@ app.post('/api/agent-data', async (req, res) => {
                 data = await fetchMarketData(prompt, getAgentAi('market_data'));
                 break;
             case 'patents':
-                const patents = await fetchPatents(prompt);
+                const patents = await fetchPatents(prompt, getAgentAi('patents'));
                 data = { patents };
                 break;
             case 'clinical_trials':
-                const trials = await fetchClinicalTrials(prompt);
+                const trials = await fetchClinicalTrials(prompt, getAgentAi('clinical_trials'));
                 data = { trials };
                 break;
             case 'web_signals':
-                const webSignals = await fetchWebSignals(prompt);
+                const webSignals = await fetchWebSignals(prompt, getAgentAi('web_signals'));
                 data = { webSignals };
                 break;
             case 'exim_sourcing':
-                data = await fetchTradeData(prompt);
+                data = await fetchTradeData(prompt, getAgentAi('exim_sourcing'));
                 break;
             case 'internal_documents':
                 const file = await prisma.uploadedFile.findFirst({
