@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Sparkles, Settings, Mic, MicOff, Trash2 } from './Icons';
 import { useVoiceAssistant } from '../context/VoiceAssistantContext';
 import RichChatRenderer from './RichChatRenderer';
+import { getApiUrl } from '../utils/api';
 
 interface Message {
   id: string;
@@ -92,7 +93,7 @@ const AIChatbot: React.FC = () => {
 
     try {
       // Send to backend /api/voice-chat for both text and Sarvam audio
-      const res = await fetch('http://localhost:3001/api/voice-chat', {
+      const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: currentInput, language: 'en-IN' })
@@ -179,7 +180,7 @@ const AIChatbot: React.FC = () => {
       setIsLoading(true);
 
       try {
-        const res = await fetch('http://localhost:3001/api/voice-chat', {
+        const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: transcript, language: 'en-IN' })
