@@ -898,8 +898,8 @@ app.post('/api/voice-chat', async (req, res) => {
                     body: JSON.stringify({
                         inputs: [aiResponseText],
                         target_language_code: language,
-                        speaker: 'kavya', 
-                        speech_sample_rate: 16000,
+                        speaker: 'meera',  // Natural female voice
+                        speech_sample_rate: 22050,  // Better quality
                         enable_preprocessing: true,
                         model: 'bulbul:v3' 
                     })
@@ -959,8 +959,8 @@ app.post('/api/tts', async (req, res) => {
                     body: JSON.stringify({
                         inputs: [cleanText],
                         target_language_code: language,
-                        speaker: 'kavya',
-                        speech_sample_rate: 16000,
+                        speaker: 'meera',  // Natural female voice
+                        speech_sample_rate: 22050,  // Better quality
                         enable_preprocessing: true,
                         model: 'bulbul:v3'
                     })
@@ -1169,8 +1169,8 @@ app.post('/api/voice-notify', async (req, res) => {
                 body: JSON.stringify({
                     inputs: [notificationText],
                     target_language_code: language,
-                    speaker: priority === 'high' ? 'dhaval' : 'kavya',
-                    speech_sample_rate: 16000,
+                    speaker: priority === 'high' ? 'dhaval' : 'meera',  // Better natural voice options
+                    speech_sample_rate: 22050,  // Higher sample rate for better quality
                     enable_preprocessing: true,
                     model: 'bulbul:v3'
                 })
