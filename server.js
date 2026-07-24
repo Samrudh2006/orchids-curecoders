@@ -202,9 +202,12 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Google OAuth Client
-const googleClientId = process.env.VITE_GOOGLE_CLIENT_ID || '744896976826-kaleqhlhvfmt9sc81ojid7o9sara7a6u.apps.googleusercontent.com';
+// Google OAuth Client - supports both dev and production client IDs
+const googleClientIdDev = '744896976826-kaleqhlhvfmt9sc81ojid7o9sara7a6u.apps.googleusercontent.com';
+const googleClientId = process.env.VITE_GOOGLE_CLIENT_ID || googleClientIdDev;
 const googleClient = new OAuth2Client(googleClientId);
+
+console.log(`[Auth] Google OAuth initialized with client ID: ${googleClientId === googleClientIdDev ? 'DEV' : 'PRODUCTION'}`);
 
 // Google Sign-In / Sign-Up
 app.post('/api/auth/google', async (req, res) => {
@@ -212,16 +215,44 @@ app.post('/api/auth/google', async (req, res) => {
         const { token } = req.body;
         if (!token) return res.status(400).json({ error: 'Token is required' });
 
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: googleClientId,
-        });
-        const payload = ticket.getPayload();
-        if (!payload || !payload.email) {
-            return res.status(400).json({ error: 'Invalid Google token' });
+        // Try to verify with primary client ID, and fallback to dev client ID if verification fails
+        let ticket = null;
+        let verificationError = null;
+
+        try {
+            ticket = await googleClient.verifyIdToken({
+                idToken: token,
+                audience: googleClientId,
+            });
+        } catch (primaryError) {
+            // If verification fails and we're using a custom client ID, try with the dev client ID
+            if (googleClientId !== googleClientIdDev) {
+                console.warn(`[Auth] Token verification failed with primary client ID, attempting with dev client ID`);
+                try {
+                    const devClient = new OAuth2Client(googleClientIdDev);
+                    ticket = await devClient.verifyIdToken({
+                        idToken: token,
+                        audience: googleClientIdDev,
+                    });
+                } catch (fallbackError) {
+                    verificationError = fallbackError;
+                }
+            } else {
+                verificationError = primaryError;
+            }
         }
 
-        const email = payload.email;
+        if (!ticket) {
+            console.error('[Auth] Google token verification failed:', verificationError);
+            return res.status(401).json({ error: 'Invalid or expired Google token. Please try signing in again.' });
+        }
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return res.status(400).json({ error: 'Invalid Google token - no email found' });
+        }
+
+        const email = payload.email.toLowerCase().trim();
 
         // Check if user exists
         let user = await prisma.user.findUnique({
@@ -231,7 +262,8 @@ app.post('/api/auth/google', async (req, res) => {
 
         // If not, create them with a secure random password
         if (!user) {
-            const randomPassword = require('crypto').randomBytes(32).toString('hex');
+            const crypto = require('crypto');
+            const randomPassword = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
             
             user = await prisma.user.create({
@@ -244,14 +276,19 @@ app.post('/api/auth/google', async (req, res) => {
                 },
                 include: { workspaces: true }
             });
+            console.log(`[Auth] New user created via Google OAuth: ${email}`);
         }
 
         const jwtToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token: jwtToken, user: { id: user.id, email: user.email, role: user.role }, workspaces: user.workspaces });
+        res.json({ 
+            token: jwtToken, 
+            user: { id: user.id, email: user.email, role: user.role }, 
+            workspaces: user.workspaces 
+        });
 
     } catch (error) {
-        console.error("Google Auth Error:", error);
-        res.status(500).json({ error: error.message || 'Google Authentication Failed' });
+        console.error("[Auth] Google Auth Error:", error);
+        res.status(500).json({ error: 'Google Authentication failed. Please try again.' });
     }
 });
 
@@ -943,6 +980,233 @@ app.post('/api/tts', async (req, res) => {
     } catch (error) {
         console.error("TTS route error:", error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// ==========================================
+// 🎙️ SARVAM SPEECH-TO-TEXT
+// ==========================================
+app.post('/api/speech-to-text', async (req, res) => {
+    try {
+        const { audio, language = 'en-IN' } = req.body;
+        
+        if (!audio) {
+            return res.status(400).json({ error: 'Audio data is required' });
+        }
+
+        if (!process.env.SARVAM_API_KEY || process.env.SARVAM_API_KEY === 'your_sarvam_api_key_here') {
+            return res.status(400).json({ error: 'Sarvam API key not configured' });
+        }
+
+        try {
+            const sarvamRes = await fetch('https://api.sarvam.ai/speech-to-text', {
+                method: 'POST',
+                headers: {
+                    'api-subscription-key': process.env.SARVAM_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audios: [audio],
+                    language_code: language,
+                    model: 'bulbul:v3'
+                })
+            });
+
+            if (sarvamRes.ok) {
+                const sarvamData = await sarvamRes.json();
+                if (sarvamData.texts && sarvamData.texts.length > 0) {
+                    return res.json({ 
+                        text: sarvamData.texts[0],
+                        success: true 
+                    });
+                } else {
+                    return res.status(400).json({ 
+                        error: 'No transcription received from Sarvam',
+                        success: false 
+                    });
+                }
+            } else {
+                const errText = await sarvamRes.text();
+                console.error("Sarvam Speech-to-Text Error:", errText);
+                return res.status(500).json({ 
+                    error: 'Sarvam Speech-to-Text failed',
+                    details: errText,
+                    success: false 
+                });
+            }
+        } catch (e) {
+            console.error("Sarvam Speech-to-Text connection failed:", e);
+            return res.status(500).json({ 
+                error: 'Failed to connect to Sarvam AI',
+                success: false 
+            });
+        }
+    } catch (error) {
+        console.error("Speech-to-Text route error:", error);
+        res.status(500).json({ error: 'Internal server error', success: false });
+    }
+});
+
+// ==========================================
+// 🎙️ SARVAM VOICE ANALYSIS
+// ==========================================
+app.post('/api/voice-analysis', async (req, res) => {
+    try {
+        const { audio, language = 'en-IN' } = req.body;
+        
+        if (!audio) {
+            return res.status(400).json({ error: 'Audio data is required' });
+        }
+
+        if (!process.env.SARVAM_API_KEY || process.env.SARVAM_API_KEY === 'your_sarvam_api_key_here') {
+            return res.status(400).json({ error: 'Sarvam API key not configured' });
+        }
+
+        try {
+            // Step 1: Convert speech to text
+            const sttRes = await fetch('https://api.sarvam.ai/speech-to-text', {
+                method: 'POST',
+                headers: {
+                    'api-subscription-key': process.env.SARVAM_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audios: [audio],
+                    language_code: language,
+                    model: 'bulbul:v3'
+                })
+            });
+
+            let transcription = 'Unable to transcribe';
+            if (sttRes.ok) {
+                const sttData = await sttRes.json();
+                if (sttData.texts && sttData.texts.length > 0) {
+                    transcription = sttData.texts[0];
+                }
+            }
+
+            // Step 2: Analyze sentiment and tone using AI
+            let analysis = {
+                sentiment: 'neutral',
+                tone: 'informative',
+                keywords: [],
+                confidence: 0.7
+            };
+
+            if (ai && transcription !== 'Unable to transcribe') {
+                try {
+                    const systemPrompt = "Analyze the following text for sentiment, tone, and key medical/pharmaceutical concepts. Return ONLY valid JSON with: sentiment (positive/negative/neutral), tone (urgent/casual/professional/concerned), keywords (array of 3-5 key terms), confidence (0.0-1.0).";
+                    const response = await ai.models.generateContent({
+                        contents: `${systemPrompt}\n\nText to analyze: "${transcription}"`
+                    });
+                    
+                    try {
+                        const cleanedResponse = response.text.replace(/```json|```/g, "").trim();
+                        analysis = JSON.parse(cleanedResponse);
+                    } catch (parseError) {
+                        console.warn("Could not parse AI analysis response:", response.text);
+                    }
+                } catch (e) {
+                    console.error("AI analysis failed:", e);
+                }
+            }
+
+            res.json({
+                transcription,
+                analysis,
+                success: true
+            });
+        } catch (e) {
+            console.error("Voice analysis connection failed:", e);
+            return res.status(500).json({
+                error: 'Failed to analyze voice',
+                success: false
+            });
+        }
+    } catch (error) {
+        console.error("Voice-Analysis route error:", error);
+        res.status(500).json({ error: 'Internal server error', success: false });
+    }
+});
+
+// ==========================================
+// 🔔 VOICE NOTIFICATION
+// ==========================================
+app.post('/api/voice-notify', async (req, res) => {
+    try {
+        const { message, language = 'en-IN', priority = 'normal', userId } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        if (!process.env.SARVAM_API_KEY || process.env.SARVAM_API_KEY === 'your_sarvam_api_key_here') {
+            return res.status(400).json({ error: 'Sarvam API key not configured' });
+        }
+
+        // Prepare notification message based on priority
+        let notificationText = message;
+        if (priority === 'high') {
+            notificationText = `ALERT: ${message}`;
+        } else if (priority === 'low') {
+            notificationText = `INFO: ${message}`;
+        }
+
+        // Truncate to ensure it fits Sarvam limit
+        if (notificationText.length > 490) {
+            const truncated = notificationText.substring(0, 490);
+            const lastPeriod = truncated.lastIndexOf('.');
+            notificationText = lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated + "...";
+        }
+
+        try {
+            const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+                method: 'POST',
+                headers: {
+                    'api-subscription-key': process.env.SARVAM_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: [notificationText],
+                    target_language_code: language,
+                    speaker: priority === 'high' ? 'dhaval' : 'kavya',
+                    speech_sample_rate: 16000,
+                    enable_preprocessing: true,
+                    model: 'bulbul:v3'
+                })
+            });
+
+            if (sarvamRes.ok) {
+                const sarvamData = await sarvamRes.json();
+                if (sarvamData.audios && sarvamData.audios.length > 0) {
+                    // In a production app, you might store this notification or send it via push
+                    return res.json({
+                        audio: sarvamData.audios[0],
+                        message: notificationText,
+                        priority,
+                        timestamp: new Date().toISOString(),
+                        success: true
+                    });
+                }
+            }
+
+            const errText = await sarvamRes.text();
+            console.error("Sarvam voice notification error:", errText);
+            return res.status(500).json({
+                error: 'Failed to generate voice notification',
+                details: errText,
+                success: false
+            });
+        } catch (e) {
+            console.error("Voice notification Sarvam call failed:", e);
+            return res.status(500).json({
+                error: 'Failed to connect to Sarvam AI',
+                success: false
+            });
+        }
+    } catch (error) {
+        console.error("Voice-Notify route error:", error);
+        res.status(500).json({ error: 'Internal server error', success: false });
     }
 });
 
