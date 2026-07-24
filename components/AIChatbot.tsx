@@ -129,32 +129,23 @@ const AIChatbot: React.FC = () => {
     }
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        return "I'm here to help! Ask me about CureCoders features, pharmaceutical research, or how to use the platform. For technical questions, I can guide you through the multi-agent system, voice assistant, or export options.";
-      }
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`${getApiUrl()}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are a helpful AI assistant for CureCoders, a pharmaceutical intelligence platform. Context about the platform: ${appKnowledge}
-
-User question: ${userMessage}
-
-Provide a helpful, concise response. If it's about the platform, use the context above. For general questions, provide accurate information. Keep responses conversational and helpful.`
-            }]
-          }]
+          message: `Context about the platform: ${appKnowledge}\n\nUser question: ${userMessage}\n\nProvide a helpful, concise response.`,
+          history: messages.slice(-5).map(m => ({ role: m.sender, content: m.content }))
         })
       });
 
+      if (!response.ok) {
+        throw new Error('API Chat failed');
+      }
+
       const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 
-        "I'm here to help with CureCoders! Ask me about features, pharmaceutical research, or general questions.";
+      return data.text || "I'm here to help with CureCoders! Ask me about features, pharmaceutical research, or general questions.";
     } catch (error) {
       return "I'm your CureCoders assistant! I can help with:\n\n• Platform features and how to use them\n• Pharmaceutical research guidance\n• Multi-agent AI system explanation\n• Voice assistant and export options\n• General questions about drug discovery\n\nWhat would you like to know?";
     }

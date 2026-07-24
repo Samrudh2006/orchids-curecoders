@@ -868,13 +868,52 @@ app.post('/api/voice-chat', async (c) => {
             try {
                 const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
                     method: 'POST',
+    const res = { json: (data, status=200) => c.json(data, status), status: (s) => ({ json: (d) => c.json(d, s), send: (d) => c.text(d, s) }), send: (d) => c.text(d), setHeader: (k,v) => c.header(k,v), end: () => {} };
+    try {
+        const {  text, language = 'en-IN'  } = (await c.req.json().catch(() => ({}))) || {};
+        
+        if (!text) {
+            return res.status(400).json({ error: 'Text is required' });
+        }
+
+        // 1. Send to DeepSeek (Conversational Brain)
+        const systemPrompt = "You are ARIA, a highly intelligent AI pharmaceutical research assistant for CureCoders. Keep your answers extremely brief and conversational. DO NOT use markdown. YOUR RESPONSE MUST BE UNDER 400 CHARACTERS. THIS IS A HARD SYSTEM LIMIT FOR VOICE SYNTHESIS.";
+        
+        let aiResponseText = "I'm sorry, I couldn't process that.";
+        if (ai) {
+            try {
+                // Using the existing CustomAIClient
+                const response = await ai.models.generateContent({
+                    contents: `${systemPrompt}\n\nUser asks: ${text}`
+                });
+                aiResponseText = response.text || "I didn't quite catch that.";
+                
+                // Safety truncation to absolutely ensure we never exceed 500 chars for Sarvam
+                if (aiResponseText.length > 490) {
+                    // Try to truncate at the last full stop within the limit
+                    const truncated = aiResponseText.substring(0, 490);
+                    const lastPeriod = truncated.lastIndexOf('.');
+                    aiResponseText = lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated + "...";
+                }
+            } catch (e) {
+                console.error("AI chat generation failed:", e);
+                aiResponseText = "I'm having trouble connecting to my brain right now.";
+            }
+        }
+
+        // 2. Send text to Sarvam AI (Text-to-Speech)
+        let audioBase64 = null;
+        if (process.env.SARVAM_API_KEY && process.env.SARVAM_API_KEY !== 'your_sarvam_api_key_here') {
+            try {
+                const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+                    method: 'POST',
                     headers: {
                         'api-subscription-key': process.env.SARVAM_API_KEY,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         inputs: [aiResponseText],
-                        target_language_code: language,
+                        target_language_code: 'hi-IN',
                         speaker: 'kavya', 
                         speech_sample_rate: 16000,
                         enable_preprocessing: true,
@@ -913,36 +952,6 @@ app.post('/api/voice-chat', async (c) => {
 // Endpoint just for TTS (when user types text instead of speaking)
 app.post('/api/tts', async (c) => {
     const req = { ...c.req.raw, user: c.get('user') };
-    const res = { json: (data, status=200) => c.json(data, status), status: (s) => ({ json: (d) => c.json(d, s), send: (d) => c.text(d, s) }), send: (d) => c.text(d), setHeader: (k,v) => c.header(k,v), end: () => {} };
-    try {
-        let { text, language = 'en-IN' } = req.body;
-        if (!text) return res.status(400).json({ error: 'Text is required' });
-
-        // Clean up markdown and truncate to fit Sarvam limit
-        let cleanText = text.replace(/[*#_]/g, '');
-        if (cleanText.length > 490) {
-            const truncated = cleanText.substring(0, 490);
-            const lastPeriod = truncated.lastIndexOf('.');
-            cleanText = lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated + "...";
-        }
-
-        let audioBase64 = null;
-        if (process.env.SARVAM_API_KEY && process.env.SARVAM_API_KEY !== 'your_sarvam_api_key_here') {
-            try {
-                const sarvamRes = await fetch('https://api.sarvam.ai/text-to-speech', {
-                    method: 'POST',
-                    headers: {
-                        'api-subscription-key': process.env.SARVAM_API_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        inputs: [cleanText],
-                        target_language_code: language,
-                        speaker: 'kavya',
-                        speech_sample_rate: 16000,
-                        enable_preprocessing: true,
-                        model: 'bulbul:v3'
-                    })
                 });
 
                 if (sarvamRes.ok) {
