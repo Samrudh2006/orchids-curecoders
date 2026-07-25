@@ -90,9 +90,9 @@ function getNextKey() {
     return key;
 }
 
-const API_KEY = process.env.GROQ_API_KEY || getNextKey();
+const API_KEY = process.env.GROQ_API_KEY || process.env.MARKET_DATA_API_KEY || process.env.VITE_GEMINI_API_KEY;
 const defaultModel = process.env.DEFAULT_AI_MODEL || 'llama-3.3-70b-versatile';
-const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.hcnsec.cn/v1";
+const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.groq.com/openai/v1";
 
 const ai = API_KEY ? new CustomAIClient(API_KEY, defaultModel, defaultBaseUrl) : null;
 
