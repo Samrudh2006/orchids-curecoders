@@ -229,12 +229,15 @@ export const VoiceAssistantProvider: React.FC<VoiceAssistantProviderProps> = ({ 
         const data = await response.json();
         if (data.audio) {
           playSarvamAudio(data.audio);
+          return;
         }
       }
+      console.warn("Sarvam AI Audio unavailable (check SARVAM_API_KEY on deployed server). Falling back to browser TTS.");
     } catch (error) {
       console.error("Error calling Sarvam TTS for text:", error);
     }
-  }, [isEnabled, playSarvamAudio]);
+    speak(text);
+  }, [isEnabled, playSarvamAudio, speak]);
 
   const startListening = useCallback(() => {
     if (!isEnabled || typeof window === 'undefined') return;
