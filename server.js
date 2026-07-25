@@ -7,8 +7,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { OAuth2Client } from 'google-auth-library';
-import ExcelJS from 'exceljs';
-import pptxgen from 'pptxgenjs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pptxgen = require('pptxgenjs');
 
 import bookmarksRouter from './routes/bookmarks.js';
 import collaborationRouter from './routes/collaboration.js';
