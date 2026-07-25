@@ -55,8 +55,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Auth States
     const [token, setToken] = useState<string | null>(() => localStorage.getItem('curecoders_auth_token'));
     const [user, setUser] = useState<{ email: string } | null>(() => {
-        const stored = localStorage.getItem('curecoders_user');
-        return stored ? JSON.parse(stored) : null;
+        try {
+            const stored = localStorage.getItem('curecoders_user');
+            return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            console.error('Error parsing stored user:', e);
+            return null;
+        }
     });
 
     const login = (newToken: string, newUser: { email: string }) => {

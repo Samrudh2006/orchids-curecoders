@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { QueryLimitProvider } from './context/QueryLimitContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { VoiceAssistantProvider } from './context/VoiceAssistantContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -15,12 +18,18 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'placeholder-cli
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <QueryLimitProvider>
-        <AppProvider>
-          <App />
-        </AppProvider>
-      </QueryLimitProvider>
-    </GoogleOAuthProvider>
+    <ErrorBoundary>
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <ThemeProvider>
+          <VoiceAssistantProvider>
+            <QueryLimitProvider>
+              <AppProvider>
+                <App />
+              </AppProvider>
+            </QueryLimitProvider>
+          </VoiceAssistantProvider>
+        </ThemeProvider>
+      </GoogleOAuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

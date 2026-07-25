@@ -169,15 +169,11 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <VoiceAssistantProvider>
-        <ARIAEnhancedWrapper>
-          <Router>
-            <AppContent />
-          </Router>
-        </ARIAEnhancedWrapper>
-      </VoiceAssistantProvider>
-    </ThemeProvider>
+    <ARIAEnhancedWrapper>
+      <Router>
+        <AppContent />
+      </Router>
+    </ARIAEnhancedWrapper>
   );
 }
 
