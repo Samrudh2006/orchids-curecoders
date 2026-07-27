@@ -48,7 +48,7 @@ class CustomAIClient {
                 let promptText = typeof contents === 'string' ? contents : JSON.stringify(contents);
 
                 if (config && config.responseMimeType === "application/json") {
-                    promptText += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this schema: ${JSON.stringify(config.responseSchema || {})}. Do NOT wrap the JSON in markdown blocks (e.g. \`\`\`json). Return pure, raw JSON only.`;
+                    promptText += `\n\nCRITICAL: You MUST return ONLY valid json matching this schema: ${JSON.stringify(config.responseSchema || {})}. Do NOT wrap the json in markdown blocks (e.g. \`\`\`json). Return pure, raw json object only.`;
                 }
 
                 const requestBody = {
@@ -77,20 +77,6 @@ class CustomAIClient {
                 return { text: data.choices[0].message.content };
             }
         };
-    }
-}
-const userKeys = [
-    'sk-QjBqRcUMhrMAcomUIU9tZjQ7YCEVjH3Kk0HnuQgbzlFcV3LJ',
-    'sk-RqP8yQZqEtMJv61oSwnyPxynRFUuiFYkpdj5ieZrR75qCebe',
-    'sk-Uw2Ey4NQxQJHMuDk6evAtpf0aW7pukNGhofXjFnnTyaZ8laQ'
-];
-let keyIndex = 0;
-function getNextKey() {
-    const key = userKeys[keyIndex];
-    keyIndex = (keyIndex + 1) % userKeys.length;
-    return key;
-}
-
 const API_KEY = process.env.GROQ_API_KEY || process.env.MARKET_DATA_API_KEY || process.env.VITE_GEMINI_API_KEY;
 const defaultModel = process.env.DEFAULT_AI_MODEL || 'llama-3.3-70b-versatile';
 const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.groq.com/openai/v1";
@@ -102,7 +88,7 @@ function getAgentAi(agentName) {
     const modelEnvKey = `${agentName.toUpperCase()}_MODEL`;
     const baseUrlEnvKey = `${agentName.toUpperCase()}_BASE_URL`;
 
-    const agentKey = process.env[envKey] || API_KEY || getNextKey();
+    const agentKey = process.env[envKey] || API_KEY;
     const baseUrl = process.env[baseUrlEnvKey] || defaultBaseUrl;
     const model = process.env[modelEnvKey] || defaultModel;
 

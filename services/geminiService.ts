@@ -42,7 +42,7 @@ export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Pr
         const data = await response.json();
         
         // Map backend names ('market_data', 'patents', etc.) to frontend AgentName enum
-        return (data.agents || []).map((name: string) => {
+        const agentsList = (data.agents || []).map((name: string) => {
             switch (name) {
                 case 'market_data': return AgentName.MARKET_DATA;
                 case 'patents': return AgentName.PATENTS;
@@ -53,12 +53,11 @@ export const decomposePrompt = async (prompt: string, fileUploaded: boolean): Pr
                 default: return name;
             }
         }) as AgentName[];
+
+        return agentsList.length > 0 ? agentsList : [AgentName.MARKET_DATA, AgentName.PATENTS, AgentName.CLINICAL, AgentName.WEB];
     } catch (error) {
-        console.error("Error in decomposePrompt:", error);
-        throw new AgentError(
-            "The Master Agent failed to understand the prompt.",
-            "Please try rephrasing your query to be more specific about the drug, therapy area, or type of analysis you need."
-        );
+        console.error("Error in decomposePrompt, using fallback agents:", error);
+        return [AgentName.MARKET_DATA, AgentName.PATENTS, AgentName.CLINICAL, AgentName.WEB];
     }
 };
 
