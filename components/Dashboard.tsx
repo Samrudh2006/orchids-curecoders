@@ -96,19 +96,35 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
     const patentData = patentAgent?.result?.[AgentName.PATENTS];
     const clinicalData = clinicalAgent?.result?.[AgentName.CLINICAL];
 
-    return (
-        <div className="mt-8 animate-[fadeIn_0.5s_ease-in-out]">
-            <h2 className="font-display text-3xl font-bold text-center">Intelligence Dashboard</h2>
-            <p className="mt-2 text-center text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-                Showing results for your query: <span className="font-semibold text-primary dark:text-primary-light">"{prompt}"</span>
-            </p>
+            const marketSizeVal = (marketData && marketData.marketSizeUSD && marketData.marketSizeUSD !== 'undefined')
+                ? (marketData.marketSizeUSD.startsWith('$') ? marketData.marketSizeUSD : `$${marketData.marketSizeUSD}`)
+                : 'N/A';
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard title="Market Size" value={marketData ? `$${marketData.marketSizeUSD}` : 'N/A'} change={marketData ? `${marketData.cagr} CAGR` : undefined} changeType="up" icon={<BarChart className="w-5 h-5"/>} />
-                <KpiCard title="High-Risk Patents" value={patentData ? `${patentData.patents.filter(p => p.ftRisk === 'High').length}` : 'N/A'} changeType="down" icon={<FileText className="w-5 h-5"/>} />
-                <KpiCard title="Active Trials" value={clinicalData ? `${clinicalData.trials.filter(t => t.status.includes('Recruiting') || t.status.includes('Active')).length}` : 'N/A'} icon={<Microscope className="w-5 h-5"/>} />
-                <KpiCard title="Agents Run" value={`${agents.filter(a => a.status === 'Done').length}`} icon={<Zap className="w-5 h-5"/>} />
-            </div>
+            const cagrVal = (marketData && marketData.cagr && marketData.cagr !== 'undefined')
+                ? (marketData.cagr.includes('CAGR') ? marketData.cagr : `${marketData.cagr} CAGR`)
+                : undefined;
+
+            const highRiskCount = (patentData && Array.isArray(patentData.patents))
+                ? patentData.patents.filter(p => p.ftRisk === 'High').length
+                : 'N/A';
+
+            const activeTrialsCount = (clinicalData && Array.isArray(clinicalData.trials))
+                ? clinicalData.trials.filter(t => t.status && (t.status.includes('Recruiting') || t.status.includes('Active'))).length
+                : 'N/A';
+
+            return (
+                <div className="mt-8 animate-[fadeIn_0.5s_ease-in-out]">
+                    <h2 className="font-display text-3xl font-bold text-center">Intelligence Dashboard</h2>
+                    <p className="mt-2 text-center text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+                        Showing results for your query: <span className="font-semibold text-primary dark:text-primary-light">"{prompt}"</span>
+                    </p>
+
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <KpiCard title="Market Size" value={marketSizeVal} change={cagrVal} changeType="up" icon={<BarChart className="w-5 h-5"/>} />
+                        <KpiCard title="High-Risk Patents" value={`${highRiskCount}`} changeType="down" icon={<FileText className="w-5 h-5"/>} />
+                        <KpiCard title="Active Trials" value={`${activeTrialsCount}`} icon={<Microscope className="w-5 h-5"/>} />
+                        <KpiCard title="Agents Run" value={`${agents.filter(a => a.status === 'Done').length}`} icon={<Zap className="w-5 h-5"/>} />
+                    </div>
 
             <div className="mt-8 space-y-4">
                  <DashboardSection 
