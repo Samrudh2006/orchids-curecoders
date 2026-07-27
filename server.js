@@ -24,6 +24,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Path normalization for Vercel Serverless Functions
+app.use((req, res, next) => {
+    if (process.env.VERCEL && !req.url.startsWith('/api')) {
+        req.url = '/api' + req.url;
+    }
+    next();
+});
+
 const PORT = 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'curecoders_super_secret_key_2026';
 
