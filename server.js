@@ -77,6 +77,9 @@ class CustomAIClient {
                 return { text: data.choices[0].message.content };
             }
         };
+    }
+}
+
 const API_KEY = process.env.GROQ_API_KEY || process.env.MARKET_DATA_API_KEY || process.env.VITE_GEMINI_API_KEY;
 const defaultModel = process.env.DEFAULT_AI_MODEL || 'llama-3.3-70b-versatile';
 const defaultBaseUrl = process.env.DEFAULT_AI_BASE_URL || "https://api.groq.com/openai/v1";
