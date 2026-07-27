@@ -680,19 +680,21 @@ const Workspace = () => {
                             }
                             break;
                         case AgentName.WEB:
-                            sheetData = agent.result[AgentName.WEB]?.webSignals?.map(w => ({
+                            const webSignalsList = agent.result[AgentName.WEB]?.webSignals;
+                            sheetData = Array.isArray(webSignalsList) ? webSignalsList.map(w => ({
                                 "Title": w.title,
                                 "Source": w.source,
-                                "Sentiment Score": w.sentiment.toFixed(2),
+                                "Sentiment Score": typeof w.sentiment === 'number' ? w.sentiment.toFixed(2) : String(w.sentiment || ''),
                                 "Excerpt": w.excerpt,
                                 "URL": w.url
-                            })) || null;
+                            })) : null;
                             break;
                         case AgentName.INTERNAL:
-                            sheetData = agent.result[AgentName.INTERNAL]?.summary?.map((s, i) => ({
+                            const summaryList = agent.result[AgentName.INTERNAL]?.summary;
+                            sheetData = Array.isArray(summaryList) ? summaryList.map((s, i) => ({
                                 "Finding": `Key Point ${i + 1}`,
                                 "Details": s
-                            })) || null;
+                            })) : null;
                             break;
                     }
 
@@ -931,7 +933,7 @@ const Workspace = () => {
 
                         case AgentName.WEB:
                             const webData = agent.result[AgentName.WEB];
-                            if (webData?.webSignals) {
+                            if (webData?.webSignals && Array.isArray(webData.webSignals)) {
                                 slide.addText("Web Intelligence Signals", {
                                     x: 0.5, y: 1.7, w: 9, h: 0.5,
                                     fontSize: 18, bold: true, color: pharmaColors.dark
@@ -940,8 +942,8 @@ const Workspace = () => {
                                 let content = "";
                                 webData.webSignals.slice(0, 3).forEach((signal, i) => {
                                     content += `${i + 1}. ${signal.title}\n`;
-                                    content += `   Source: ${signal.source} | Sentiment: ${(signal.sentiment * 100).toFixed(0)}%\n`;
-                                    content += `   ${signal.excerpt.substring(0, 80)}...\n\n`;
+                                    content += `   Source: ${signal.source} | Sentiment: ${((signal.sentiment || 0) * 100).toFixed(0)}%\n`;
+                                    content += `   ${(signal.excerpt || '').substring(0, 80)}...\n\n`;
                                 });
 
                                 slide.addText(content, {

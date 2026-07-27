@@ -339,6 +339,8 @@ export const ClinicalResult: React.FC<{ data: AgentResultData[AgentName.CLINICAL
 
 export const EximResult: React.FC<{ data: AgentResultData[AgentName.EXIM] }> = ({ data }) => {
     if (!data) return null;
+    const exportVolumes = Array.isArray(data.exportVolumes) ? data.exportVolumes : [];
+    const topSourcingCountries = Array.isArray(data.topSourcingCountries) ? data.topSourcingCountries : [];
     return (
         <div className="grid md:grid-cols-2 gap-8">
             <div>
@@ -348,11 +350,11 @@ export const EximResult: React.FC<{ data: AgentResultData[AgentName.EXIM] }> = (
             <div className="space-y-4">
                  <div>
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Export Volumes</h4>
-                    {data.exportVolumes.map((item, i) => <KeyValue key={i} label={item.country} value={item.value} />)}
+                    {exportVolumes.map((item, i) => <KeyValue key={i} label={item.country} value={item.value} />)}
                 </div>
                  <div>
                     <h4 className="font-semibold mb-2 text-slate-700 dark:text-slate-200">Top Sourcing Countries</h4>
-                    {data.topSourcingCountries.map((item, i) => <KeyValue key={i} label={item.country} value={item.share} />)}
+                    {topSourcingCountries.map((item, i) => <KeyValue key={i} label={item.country} value={item.share} />)}
                 </div>
             </div>
         </div>
@@ -360,7 +362,7 @@ export const EximResult: React.FC<{ data: AgentResultData[AgentName.EXIM] }> = (
 }
 
 const SentimentBar: React.FC<{ score: number }> = ({ score }) => {
-    const width = `${score * 100}%`;
+    const width = `${(score || 0) * 100}%`;
     const color = score > 0.6 ? 'bg-secondary' : score > 0.3 ? 'bg-yellow-500' : 'bg-red-500';
     return (
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
@@ -370,7 +372,7 @@ const SentimentBar: React.FC<{ score: number }> = ({ score }) => {
 };
 
 export const WebResult: React.FC<{ data: AgentResultData[AgentName.WEB] }> = ({ data }) => {
-     if (!data || !data.webSignals) return null;
+     if (!data || !data.webSignals || !Array.isArray(data.webSignals)) return null;
      return (
         <div className="space-y-4">
             {data.webSignals.map((s, i) => (
@@ -392,7 +394,7 @@ export const WebResult: React.FC<{ data: AgentResultData[AgentName.WEB] }> = ({ 
 }
 
 export const InternalResult: React.FC<{ data: AgentResultData[AgentName.INTERNAL] }> = ({ data }) => {
-    if (!data || !data.summary) return null;
+    if (!data || !data.summary || !Array.isArray(data.summary)) return null;
     return (
         <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300">
             {data.summary.map((item, i) => <li key={i}>{item}</li>)}
