@@ -15,6 +15,7 @@ model User {
   password   String
   role       String      @default("Analyst")
   workspaces Workspace[]
+  bookmarks  Bookmark[]
   createdAt  DateTime    @default(now())
 }
 
@@ -38,6 +39,7 @@ model SearchQuery {
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   agents      String        // JSON string array of agents used
   results     AgentResult[]
+  bookmarks   Bookmark[]
   createdAt   DateTime      @default(now())
 
   @@index([workspaceId])
@@ -81,15 +83,20 @@ model DocumentChunk {
 }
 
 model Bookmark {
-  id           String   @id @default(uuid())
+  id           String       @id @default(uuid())
   userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queryId      String
+  query        SearchQuery  @relation(fields: [queryId], references: [id], onDelete: Cascade)
   title        String
-  query        String
   summary      String
-  agentResults String   // JSON string
-  tags         String   @default("[]") // JSON string array of tags
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  agentResults String       // JSON string
+  tags         String       @default("[]") // JSON string array of tags
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([queryId])
 }
 
 model SharedWorkspace {
