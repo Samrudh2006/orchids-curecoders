@@ -1,37 +1,64 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, Sparkles, Settings, Mic, MicOff, Trash2 } from './Icons';
-import { useVoiceAssistant } from '../context/VoiceAssistantContext';
-import RichChatRenderer from './RichChatRenderer';
-import getApiUrl from '../services/apiConfig';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  MessageCircle,
+  Send,
+  X,
+  Minimize2,
+  Maximize2,
+  Bot,
+  User,
+  Sparkles,
+  Settings,
+  Mic,
+  MicOff,
+  Trash2,
+} from "./Icons";
+import { useVoiceAssistant } from "../context/VoiceAssistantContext";
+import {
+  VOICE_STATES,
+  chatStream,
+  textToSpeech,
+} from "../services/voiceService";
+import RichChatRenderer from "./RichChatRenderer";
+import getApiUrl from "../services/apiConfig";
 
 interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'bot';
+  sender: "user" | "bot";
   timestamp: Date;
   isTyping?: boolean;
 }
 
-const STORAGE_KEY = 'curecoders_chat_history';
+const STORAGE_KEY = "curecoders_chat_history";
 
 const getInitialMessage = (): Message => ({
-  id: '1',
-  content: "Hello! I'm your AI assistant for CureCoders pharmaceutical platform. I can help you with questions about drug discovery, market analysis, document uploads, and navigating our features. What would you like to know?",
-  sender: 'bot',
-  timestamp: new Date()
+  id: "1",
+  content:
+    "Hello! I'm your AI assistant for CureCoders pharmaceutical platform. I can help you with questions about drug discovery, market analysis, document uploads, and navigating our features. What would you like to know?",
+  sender: "bot",
+  timestamp: new Date(),
 });
 
 const AIChatbot: React.FC = () => {
-  const { speak, isEnabled, toggleVoice, isSpeaking, playSarvamAudio } = useVoiceAssistant();
+  const {
+    speak,
+    isEnabled,
+    toggleVoice,
+    isSpeaking,
+    playSarvamAudio,
+    isListening,
+    startListening,
+    stopListening,
+    voiceState,
+  } = useVoiceAssistant();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isListeningMic, setIsListeningMic] = useState(false);
   const [messages, setMessages] = useState<Message[]>([getInitialMessage()]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -40,13 +67,13 @@ const AIChatbot: React.FC = () => {
         const parsed = JSON.parse(saved);
         const restored = parsed.map((m: any) => ({
           ...m,
-          timestamp: new Date(m.timestamp)
+          timestamp: new Date(m.timestamp),
         }));
         if (restored.length > 0) {
           setMessages(restored);
         }
       } catch (e) {
-        console.error('Failed to restore chat history:', e);
+        console.error("Failed to restore chat history:", e);
       }
     }
   }, []);
@@ -63,7 +90,7 @@ const AIChatbot: React.FC = () => {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -82,52 +109,76 @@ const AIChatbot: React.FC = () => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
-      sender: 'user',
-      timestamp: new Date()
+      sender: "user",
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const currentInput = inputValue;
-    setInputValue('');
+    setInputValue("");
     setIsLoading(true);
 
     try {
-      // Send to backend /api/voice-chat for both text and Sarvam audio
-      const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: currentInput, language: 'en-IN' })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: data.text || "Sorry, I had trouble processing that.",
-          sender: 'bot',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botMessage]);
+      // Stream the AI response token-by-token so the bot text appears
+      // immediately, then synthesize speech asynchronously (TTS no longer
+      // blocks the chat UI).
+      let fullText = "";
+      const botId = (Date.now() + 1).toString();
+      const botMessage: Message = {
+        id: botId,
+        content: "",
+        sender: "bot",
+        timestamp: new Date(),
+        isTyping: true,
+      };
+      setMessages((prev) => [...prev, botMessage]);
 
-        if (isEnabled) {
-          if (data.audio) {
-            playSarvamAudio(data.audio);
-          } else if (data.text) {
-            speak(data.text);
-          }
+      try {
+        await chatStream(currentInput, "en-IN", (delta) => {
+          fullText += delta;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === botId ? { ...m, content: fullText } : m)),
+          );
+        });
+      } catch (streamErr) {
+        console.warn("Streaming chat failed, falling back:", streamErr);
+        const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: currentInput, language: "en-IN" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          fullText = data.text || "Sorry, I had trouble processing that.";
+          setMessages((prev) =>
+            prev.map((m) => (m.id === botId ? { ...m, content: fullText } : m)),
+          );
+        } else {
+          throw new Error("Backend failed");
         }
-      } else {
-        throw new Error('Backend failed');
+      }
+
+      // Finalize the message and kick off TTS asynchronously.
+      setMessages((prev) =>
+        prev.map((m) => (m.id === botId ? { ...m, isTyping: false } : m)),
+      );
+      if (isEnabled && fullText) {
+        textToSpeech(fullText, "en-IN")
+          .then((audio) => {
+            if (audio) playSarvamAudio(audio);
+            else speak(fullText);
+          })
+          .catch(() => speak(fullText));
       }
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I had trouble connecting to the server.",
-        sender: 'bot',
-        timestamp: new Date()
+        sender: "bot",
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
       if (isEnabled) {
         speak("Sorry, I had trouble connecting to the server.");
       }
@@ -137,104 +188,22 @@ const AIChatbot: React.FC = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
+  // Sarvam AI Speech-to-Text flow via the VoiceAssistant context.
+  // startListening/stopListening handle MediaRecorder capture + upload to
+  // /api/voice/stt and automatically run the AI chat + TTS pipeline.
   const startLocalListening = () => {
-    if (!isEnabled || typeof window === 'undefined') return;
-    
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error("Speech Recognition not supported.");
-      return;
-    }
-
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setIsListeningMic(true);
-    };
-
-    recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setInputValue(''); // Clear input since we're using it
-      
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: transcript,
-        sender: 'user',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, userMessage]);
-      setIsLoading(true);
-
-      try {
-        const res = await fetch(`${getApiUrl()}/api/voice-chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: transcript, language: 'en-IN' })
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.text || "Sorry, I had trouble processing that.",
-            sender: 'bot',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, botMessage]);
-
-          if (data.audio) {
-            playSarvamAudio(data.audio);
-          } else if (data.text) {
-            speak(data.text);
-          }
-        }
-      } catch (err) {
-        console.error("Voice chat error:", err);
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "Sorry, I had trouble connecting to the server.",
-          sender: 'bot',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botMessage]);
-        speak("Sorry, I had trouble connecting to the server.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech Recognition Error:", event.error);
-      setIsListeningMic(false);
-    };
-
-    recognition.onend = () => {
-      setIsListeningMic(false);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    if (!isEnabled || typeof window === "undefined") return;
+    startListening();
   };
 
   const stopLocalListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListeningMic(false);
-    }
+    stopListening();
   };
 
   const quickQuestions = [
@@ -242,7 +211,7 @@ const AIChatbot: React.FC = () => {
     "What are the AI agents?",
     "How to export reports?",
     "Tell me about voice assistant",
-    "Document upload help"
+    "Document upload help",
   ];
 
   return (
@@ -254,7 +223,11 @@ const AIChatbot: React.FC = () => {
       >
         <div className="relative flex-shrink-0">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 bg-white">
-            <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+            <img
+              src="/assistant-avatar.png"
+              alt="AI Assistant"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white"></div>
         </div>
@@ -264,9 +237,12 @@ const AIChatbot: React.FC = () => {
 
       {/* Modal Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
-          <div 
-            className={`${isExpanded ? 'w-full h-full max-w-none' : 'w-full max-w-lg h-[600px]'} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 overflow-hidden`}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className={`${isExpanded ? "w-full h-full max-w-none" : "w-full max-w-lg h-[600px]"} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -274,13 +250,21 @@ const AIChatbot: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <div className="flex items-center justify-center w-12 h-12 rounded-xl overflow-hidden border border-teal-500 bg-white shadow-lg">
-                    <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+                    <img
+                      src="/assistant-avatar.png"
+                      alt="AI Assistant"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">AI Chat Assistant</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">CureCoders Help & Support</p>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">
+                    AI Chat Assistant
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    CureCoders Help & Support
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
@@ -298,7 +282,11 @@ const AIChatbot: React.FC = () => {
                   className="p-2.5 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 rounded-lg transition-colors"
                   title={isExpanded ? "Minimize" : "Expand"}
                 >
-                  {isExpanded ? <Minimize2 className="w-5 h-5 text-slate-600 dark:text-slate-400" /> : <Maximize2 className="w-5 h-5 text-slate-600 dark:text-slate-400" />}
+                  {isExpanded ? (
+                    <Minimize2 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  )}
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
@@ -315,46 +303,67 @@ const AIChatbot: React.FC = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div className={`max-w-[85%] ${message.sender === 'user' ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-md border border-slate-100 dark:border-slate-700'} rounded-2xl px-4 py-3`}>
+                  <div
+                    className={`max-w-[85%] ${message.sender === "user" ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white" : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-md border border-slate-100 dark:border-slate-700"} rounded-2xl px-4 py-3`}
+                  >
                     <div className="flex items-start space-x-3">
-                      {message.sender === 'bot' && (
+                      {message.sender === "bot" && (
                         <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 mt-0.5 shadow-sm">
-                          <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+                          <img
+                            src="/assistant-avatar.png"
+                            alt="AI Assistant"
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       )}
-                      {message.sender === 'user' && (
+                      {message.sender === "user" && (
                         <User className="w-5 h-5 mt-1 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        {message.sender === 'bot' ? (
+                        {message.sender === "bot" ? (
                           <RichChatRenderer content={message.content} />
                         ) : (
                           <div className="whitespace-pre-wrap text-sm leading-relaxed">
                             {message.content}
                           </div>
                         )}
-                        <div className={`text-xs mt-2.5 ${message.sender === 'user' ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'}`}>
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div
+                          className={`text-xs mt-2.5 ${message.sender === "user" ? "text-white/70" : "text-slate-400 dark:text-slate-500"}`}
+                        >
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl px-4 py-3 shadow-md border border-slate-100 dark:border-slate-700">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden border border-teal-100 dark:border-teal-900 bg-white flex-shrink-0 shadow-sm">
-                        <img src="/assistant-avatar.png" alt="AI Assistant" className="w-full h-full object-cover" />
+                        <img
+                          src="/assistant-avatar.png"
+                          alt="AI Assistant"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex space-x-1.5">
                         <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce"></div>
-                        <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                        <div className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                        <div
+                          className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.15s" }}
+                        ></div>
+                        <div
+                          className="w-2.5 h-2.5 bg-teal-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.3s" }}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -366,7 +375,9 @@ const AIChatbot: React.FC = () => {
             {/* Quick Questions */}
             {messages.length === 1 && !isLoading && (
               <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-semibold uppercase tracking-wide">Quick questions:</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 font-semibold uppercase tracking-wide">
+                  Quick questions:
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {quickQuestions.map((question, index) => (
                     <button
@@ -388,32 +399,46 @@ const AIChatbot: React.FC = () => {
                 <button
                   onClick={toggleVoice}
                   className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
-                    isEnabled 
+                    isEnabled
                       ? isSpeaking
-                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-500'
-                        : 'bg-teal-100 dark:bg-teal-900/30 text-teal-500'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        ? "bg-orange-100 dark:bg-orange-900/30 text-orange-500"
+                        : "bg-teal-100 dark:bg-teal-900/30 text-teal-500"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   }`}
-                  title={isEnabled ? (isSpeaking ? 'Speaking...' : 'Voice enabled') : 'Enable voice'}
+                  title={
+                    isEnabled
+                      ? isSpeaking
+                        ? "Speaking..."
+                        : "Voice enabled"
+                      : "Enable voice"
+                  }
                 >
-                  {isEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                  {isEnabled ? (
+                    <Mic className="w-5 h-5" />
+                  ) : (
+                    <MicOff className="w-5 h-5" />
+                  )}
                 </button>
 
                 {/* Direct Voice Chat Button */}
                 {isEnabled && (
                   <button
-                    onClick={isListeningMic ? stopLocalListening : startLocalListening}
+                    onClick={
+                      isListening ? stopLocalListening : startLocalListening
+                    }
                     className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
-                      isListeningMic
-                        ? 'bg-red-500 text-white animate-pulse shadow-lg'
-                        : 'bg-pink-100 dark:bg-pink-900/30 text-pink-500 hover:bg-pink-200 dark:hover:bg-pink-900/50 hover:shadow-md'
+                      isListening
+                        ? "bg-red-500 text-white animate-pulse shadow-lg"
+                        : "bg-pink-100 dark:bg-pink-900/30 text-pink-500 hover:bg-pink-200 dark:hover:bg-pink-900/50 hover:shadow-md"
                     }`}
-                    title={isListeningMic ? 'Stop Listening' : 'Tap to Chat with ARIA'}
+                    title={
+                      isListening ? "Stop Listening" : "Tap to Chat with ARIA"
+                    }
                   >
                     <Sparkles className="w-5 h-5" />
                   </button>
                 )}
-                
+
                 {/* Input Field */}
                 <div className="flex-1 relative">
                   <input
@@ -427,7 +452,7 @@ const AIChatbot: React.FC = () => {
                     disabled={isLoading}
                   />
                 </div>
-                
+
                 {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
@@ -438,12 +463,18 @@ const AIChatbot: React.FC = () => {
                   <Send className="w-5 h-5" />
                 </button>
               </div>
-              
+
               {/* Voice status indicator */}
               {isEnabled && (
                 <div className="flex items-center gap-2 mt-3 text-xs text-slate-500 dark:text-slate-400">
-                  <div className={`w-2 h-2 rounded-full ${isSpeaking ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></div>
-                  <span>{isSpeaking ? 'ARIA is speaking...' : 'Voice assistant ready'}</span>
+                  <div
+                    className={`w-2 h-2 rounded-full ${isSpeaking ? "bg-orange-500 animate-pulse" : "bg-green-500"}`}
+                  ></div>
+                  <span>
+                    {isSpeaking
+                      ? "ARIA is speaking..."
+                      : "Voice assistant ready"}
+                  </span>
                 </div>
               )}
             </div>
