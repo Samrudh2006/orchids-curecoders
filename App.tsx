@@ -1,29 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { VoiceAssistantProvider } from './context/VoiceAssistantContext';
-import { QueryLimitProvider } from './context/QueryLimitContext';
-import ARIAEnhancedWrapper from './components/ARIAEnhancedWrapper';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import History from './pages/History';
-import Architecture from './pages/Architecture';
-import SampleOutputs from './pages/SampleOutputs';
-import MockAPIs from './pages/MockAPIs';
-import StrategicQueries from './pages/StrategicQueries';
-import ProductJourney from './pages/ProductJourney';
-import ReportsDemo from './pages/ReportsDemo';
-import Payment from './pages/Payment';
-import SearchModal from './components/SearchModal';
-import ComparisonTool from './components/ComparisonTool';
-import CollaborationPanel from './components/CollaborationPanel';
-import BookmarksManager from './components/BookmarksManager';
-import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import LoginModal from './components/LoginModal';
-import { useAppContext } from './hooks/useAppContext';
-import LockedFeatureGate from './components/LockedFeatureGate';
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { VoiceAssistantProvider } from "./context/VoiceAssistantContext";
+import { QueryLimitProvider } from "./context/QueryLimitContext";
+import ARIAEnhancedWrapper from "./components/ARIAEnhancedWrapper";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import History from "./pages/History";
+import Architecture from "./pages/Architecture";
+import SampleOutputs from "./pages/SampleOutputs";
+import MockAPIs from "./pages/MockAPIs";
+import StrategicQueries from "./pages/StrategicQueries";
+import ProductJourney from "./pages/ProductJourney";
+import ReportsDemo from "./pages/ReportsDemo";
+import Payment from "./pages/Payment";
+import SearchModal from "./components/SearchModal";
+import ComparisonTool from "./components/ComparisonTool";
+import CollaborationPanel from "./components/CollaborationPanel";
+import BookmarksManager from "./components/BookmarksManager";
+import KeyboardShortcutsModal from "./components/KeyboardShortcutsModal";
+import VoiceChatWidget from "./components/VoiceChatWidget";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import LoginModal from "./components/LoginModal";
+import { useAppContext } from "./hooks/useAppContext";
+import LockedFeatureGate from "./components/LockedFeatureGate";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -50,44 +56,49 @@ function AppContent() {
       closeAllModals();
       setShowLogin(true);
     };
-    window.addEventListener('open-login', handleOpenLogin);
+    window.addEventListener("open-login", handleOpenLogin);
     return () => {
-      window.removeEventListener('open-login', handleOpenLogin);
+      window.removeEventListener("open-login", handleOpenLogin);
     };
   }, []);
 
   useKeyboardShortcuts({
-    'ctrl+k': () => {
+    "ctrl+k": () => {
       closeAllModals();
       setShowSearch(true);
     },
-    'ctrl+b': () => {
+    "ctrl+b": () => {
       closeAllModals();
       setShowBookmarks(true);
     },
-    'ctrl+shift+c': () => {
+    "ctrl+shift+c": () => {
       closeAllModals();
       setShowComparison(true);
     },
-    'ctrl+shift+t': toggleTheme,
-    'escape': closeAllModals,
-    'shift+?': () => {
+    "ctrl+shift+t": toggleTheme,
+    escape: closeAllModals,
+    "shift+?": () => {
       closeAllModals();
       setShowShortcuts(true);
     },
   });
 
   const handleSearch = (query: string) => {
-    const saved = JSON.parse(localStorage.getItem('curecoders_recent_searches') || '[]');
-    const updated = [query, ...saved.filter((s: string) => s !== query)].slice(0, 10);
-    localStorage.setItem('curecoders_recent_searches', JSON.stringify(updated));
-    navigate('/');
-    window.dispatchEvent(new CustomEvent('run-query', { detail: query }));
+    const saved = JSON.parse(
+      localStorage.getItem("curecoders_recent_searches") || "[]",
+    );
+    const updated = [query, ...saved.filter((s: string) => s !== query)].slice(
+      0,
+      10,
+    );
+    localStorage.setItem("curecoders_recent_searches", JSON.stringify(updated));
+    navigate("/");
+    window.dispatchEvent(new CustomEvent("run-query", { detail: query }));
   };
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-800 dark:text-slate-200 font-sans transition-colors duration-300">
-      <Header 
+      <Header
         onOpenSearch={() => setShowSearch(true)}
         onOpenBookmarks={() => setShowBookmarks(true)}
         onOpenComparison={() => setShowComparison(true)}
@@ -97,72 +108,94 @@ function AppContent() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/history" element={
-            <LockedFeatureGate featureName="Research History" isFullPage>
-              <History />
-            </LockedFeatureGate>
-          } />
-          <Route path="/architecture" element={
-            <LockedFeatureGate featureName="Platform Architecture" isFullPage>
-              <Architecture />
-            </LockedFeatureGate>
-          } />
-          <Route path="/samples" element={
-            <LockedFeatureGate featureName="Sample Outputs" isFullPage>
-              <SampleOutputs />
-            </LockedFeatureGate>
-          } />
-          <Route path="/apis" element={
-            <LockedFeatureGate featureName="Mock API Integrations" isFullPage>
-              <MockAPIs />
-            </LockedFeatureGate>
-          } />
-          <Route path="/queries" element={
-            <LockedFeatureGate featureName="Strategic Queries" isFullPage>
-              <StrategicQueries />
-            </LockedFeatureGate>
-          } />
-          <Route path="/journey" element={
-            <LockedFeatureGate featureName="Product Journey" isFullPage>
-              <ProductJourney />
-            </LockedFeatureGate>
-          } />
-          <Route path="/reports" element={
-            <LockedFeatureGate featureName="Reports Demo" isFullPage>
-              <ReportsDemo />
-            </LockedFeatureGate>
-          } />
+          <Route
+            path="/history"
+            element={
+              <LockedFeatureGate featureName="Research History" isFullPage>
+                <History />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/architecture"
+            element={
+              <LockedFeatureGate featureName="Platform Architecture" isFullPage>
+                <Architecture />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/samples"
+            element={
+              <LockedFeatureGate featureName="Sample Outputs" isFullPage>
+                <SampleOutputs />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/apis"
+            element={
+              <LockedFeatureGate featureName="Mock API Integrations" isFullPage>
+                <MockAPIs />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/queries"
+            element={
+              <LockedFeatureGate featureName="Strategic Queries" isFullPage>
+                <StrategicQueries />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/journey"
+            element={
+              <LockedFeatureGate featureName="Product Journey" isFullPage>
+                <ProductJourney />
+              </LockedFeatureGate>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <LockedFeatureGate featureName="Reports Demo" isFullPage>
+                <ReportsDemo />
+              </LockedFeatureGate>
+            }
+          />
           <Route path="/payment" element={<Payment />} />
         </Routes>
       </main>
       <Footer />
 
-      <SearchModal 
-        isOpen={showSearch} 
-        onClose={() => setShowSearch(false)} 
+      <SearchModal
+        isOpen={showSearch}
+        onClose={() => setShowSearch(false)}
         onSearch={handleSearch}
       />
-      <ComparisonTool 
-        isOpen={showComparison} 
-        onClose={() => setShowComparison(false)} 
+      <ComparisonTool
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
       />
-      <CollaborationPanel 
-        isOpen={showCollaboration} 
-        onClose={() => setShowCollaboration(false)} 
+      <CollaborationPanel
+        isOpen={showCollaboration}
+        onClose={() => setShowCollaboration(false)}
       />
-      <BookmarksManager 
-        isOpen={showBookmarks} 
-        onClose={() => setShowBookmarks(false)} 
+      <BookmarksManager
+        isOpen={showBookmarks}
+        onClose={() => setShowBookmarks(false)}
       />
-      <KeyboardShortcutsModal 
-        isOpen={showShortcuts} 
-        onClose={() => setShowShortcuts(false)} 
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
       />
-      <LoginModal 
-        isOpen={showLogin} 
+      <LoginModal
+        isOpen={showLogin}
         onClose={() => setShowLogin(false)}
         onLoginSuccess={login}
       />
+      <VoiceChatWidget />
     </div>
   );
 }

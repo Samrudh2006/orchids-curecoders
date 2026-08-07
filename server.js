@@ -13,11 +13,17 @@ const pptxgen = require("pptxgenjs");
 import collaborationRouter from "./routes/collaboration.js";
 import uploadRouter from "./routes/upload.js";
 import historyRouter from "./routes/history.js";
-import chatRouter from "./routes/chat.js";
+import createChatRouter from "./routes/chat.js";
+import createVoiceRouter from "./routes/voice.js";
+import { textToSpeech } from "./services/sarvamTts.js";
 
 import { searchSimilarChunks } from "./services/vectorSearch.js";
 import { generateEmbedding } from "./services/embeddingService.js";
 import prisma from "./services/prismaClient.js";
+
+// Shared Multi-LLM provider service (Phase 3).
+import AIService from "./services/ai/aiService.js";
+import { AIUnavailableError } from "./services/ai/errors.js";
 
 const app = express();
 app.use(cors());
@@ -57,79 +63,91 @@ const googleClient =
 app.use("/api/collaboration", collaborationRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/history", historyRouter);
-app.use("/api/chat", chatRouter);
 
-// Custom AI Client for OpenAI-compatible proxies
-class CustomAIClient {
-  constructor(
-    apiKey,
-    modelName = "glm4.7",
-    baseUrl = "https://api.hcnsec.cn/v1",
-  ) {
-    this.apiKey = apiKey;
-    this.baseUrl = baseUrl;
-    this.modelName = modelName;
-    this.models = {
-      generateContent: async (params) => {
-        const { contents, config } = params;
-        let promptText =
-          typeof contents === "string" ? contents : JSON.stringify(contents);
+// ============================================================
+// 🤖 SHARED MULTI-LLM PROVIDER SERVICE (Phase 3)
+// ============================================================
+//
+// The shared AIService is the single entry point for all LLM interactions.
+// It manages Gemini, Groq, OpenRouter, Cohere, Mistral, NVIDIA and a legacy
+// fallback provider. Providers are only instantiated when their API key is
+// present in .env; missing keys disable just that provider.
+//
+// The service exposes a backward-compatible models object so the voice
+// assistant and existing routes keep working exactly as before.
+//
+// Fallback order (configurable via AI_PROVIDER_FALLBACK_ORDER):
+//   gemini → groq → openrouter → mistral → nvidia → cohere → legacy
+const ai = new AIService({
+  defaultProvider: process.env.DEFAULT_AI_PROVIDER || "gemini",
+  includeLegacy: true,
+});
 
-        if (config && config.responseMimeType === "application/json") {
-          promptText += `\n\nCRITICAL: You MUST return ONLY valid json matching this schema: ${JSON.stringify(config.responseSchema || {})}. Do NOT wrap the json in markdown blocks (e.g. \`\`\`json). Return pure, raw json object only.`;
-        }
+// Mount the modular voice router (STT / TTS / chat). It reuses the shared AI
+// service for the conversational brain and Sarvam services for speech.
+app.use(
+  "/api/voice",
+  createVoiceRouter(() => ai),
+);
 
-        const requestBody = {
-          model: this.modelName,
-          messages: [{ role: "user", content: promptText }],
-        };
-        if (config && config.responseMimeType === "application/json") {
-          requestBody.response_format = { type: "json_object" };
-        }
+// Mount the chat router using the SAME shared AI service instance (no
+// duplicated provider initialization).
+app.use(
+  "/api/chat",
+  createChatRouter(() => ai),
+);
 
-        const response = await fetch(`${this.baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.apiKey}`,
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const err = await response.text();
-          throw new Error(`AI API error: ${response.status} ${err}`);
-        }
-
-        const data = await response.json();
-        return { text: data.choices[0].message.content };
-      },
-    };
+// Health / status endpoint for the multi-provider AI service.
+app.get("/api/ai/providers", async (req, res) => {
+  try {
+    const status = ai.status();
+    const health = await ai.healthCheckAll();
+    res.json({
+      defaultProvider: ai.providerName(),
+      fallbackOrder: ai.manager.fallbackOrder,
+      providers: status,
+      health,
+    });
+  } catch (error) {
+    console.error("AI provider status error:", error);
+    res.status(500).json({ error: error.message || "Failed to get AI status" });
   }
-}
+});
 
-const API_KEY =
-  process.env.GROQ_API_KEY ||
-  process.env.MARKET_DATA_API_KEY ||
-  process.env.VITE_GEMINI_API_KEY;
-const defaultModel = process.env.DEFAULT_AI_MODEL || "llama-3.3-70b-versatile";
-const defaultBaseUrl =
-  process.env.DEFAULT_AI_BASE_URL || "https://api.groq.com/openai/v1";
+// Generic endpoint to run a request through the shared AI service.
+app.post("/api/ai/generate", async (req, res) => {
+  try {
+    const { prompt, contents, provider, model } = req.body;
+    const input =
+      prompt !== undefined
+        ? prompt
+        : contents !== undefined
+          ? contents
+          : req.body;
 
-const ai = API_KEY
-  ? new CustomAIClient(API_KEY, defaultModel, defaultBaseUrl)
-  : null;
+    if (!input) return res.status(400).json({ error: "Prompt is required" });
 
+    const result = await ai.generateResponse(input, {
+      provider,
+      model,
+    });
+    res.json({ text: result.text, provider: result.provider });
+  } catch (error) {
+    console.error("Shared AI generate error:", error);
+    const status =
+      error instanceof AIUnavailableError ? 503 : error.status || 500;
+    res.status(status).json({ error: error.message || "AI generation failed" });
+  }
+});
+
+/**
+ * Legacy helper retained for the agent runner routes. It now returns the
+ * shared AIService so every agent (market_data, patents, clinical_trials,
+ * web_signals, exim_sourcing, internal_documents) uses the exact same
+ * multi-LLM provider architecture instead of a separate client per agent.
+ */
 function getAgentAi(agentName) {
-  const envKey = `${agentName.toUpperCase()}_API_KEY`;
-  const modelEnvKey = `${agentName.toUpperCase()}_MODEL`;
-  const baseUrlEnvKey = `${agentName.toUpperCase()}_BASE_URL`;
-
-  const agentKey = process.env[envKey] || API_KEY;
-  const baseUrl = process.env[baseUrlEnvKey] || defaultBaseUrl;
-  const model = process.env[modelEnvKey] || defaultModel;
-
-  return agentKey ? new CustomAIClient(agentKey, model, baseUrl) : null;
+  return ai;
 }
 
 // ==========================================
@@ -1271,10 +1289,12 @@ app.post("/api/voice-chat", async (req, res) => {
 
     // 2. Send text to Sarvam AI (Text-to-Speech)
     let audioBase64 = null;
+    let ttsMs = null;
     if (
       process.env.SARVAM_API_KEY &&
       process.env.SARVAM_API_KEY !== "your_sarvam_api_key_here"
     ) {
+      const ttsStart = Date.now();
       try {
         const sarvamRes = await fetch("https://api.sarvam.ai/text-to-speech", {
           method: "POST",
@@ -1306,7 +1326,11 @@ app.post("/api/voice-chat", async (req, res) => {
         console.error("Sarvam AI connection failed:", e);
         audioBase64 = "ERROR: " + e.message;
       }
+      ttsMs = Date.now() - ttsStart;
     }
+    console.log(
+      `[Voice Chat] LLM+TTS total: ${ttsMs !== null ? ttsMs : "N/A"}ms (TTS)`,
+    );
 
     res.json({
       text:

@@ -1,34 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { useVoiceAssistant } from '../context/VoiceAssistantContext';
+import React, { useState, useEffect } from "react";
+import { useVoiceChat } from "../hooks/useVoiceChat";
+import { VOICE_STATES } from "../services/voiceService";
 
 const VoiceAssistantUI: React.FC = () => {
-  const { isEnabled, isSpeaking, isListening, startListening, stopListening, toggleVoice, speak, stopSpeaking } = useVoiceAssistant();
+  const {
+    isEnabled,
+    isSpeaking,
+    isListening,
+    isRecording,
+    isProcessing,
+    voiceState,
+    lastTranscript,
+    lastResponse,
+    toggleVoice,
+    speak,
+    stopSpeaking,
+    toggleRecording,
+  } = useVoiceChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     // Show welcome notification when first visiting (client-side only)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const hasSeenWelcome = localStorage.getItem('curecoders_voice_welcome_shown');
+    if (typeof window !== "undefined" && window.localStorage) {
+      const hasSeenWelcome = localStorage.getItem(
+        "curecoders_voice_welcome_shown",
+      );
       if (!hasSeenWelcome) {
         setShowWelcome(true);
-        localStorage.setItem('curecoders_voice_welcome_shown', 'true');
+        localStorage.setItem("curecoders_voice_welcome_shown", "true");
       }
     }
   }, []);
 
   const handleQuickCommands = (command: string) => {
     const commands: Record<string, string> = {
-      'intro': "CureCoders is an AI-powered pharmaceutical intelligence platform. Use our multi-agent system to analyze markets, patents, clinical trials, and generate comprehensive reports for strategic decision making.",
-      
-      'features': "Key features include Market Intelligence for competitive analysis, Patent Analysis for IP landscape, Clinical Data for trial insights, Advanced Reporting with charts, Document Management, and Smart Search capabilities.",
-      
-      'help': "I can help you navigate the platform, explain features, provide voice guidance, and narrate research results. Try uploading a document, running a search query, or exploring the different agent capabilities.",
-      
-      'demo': "To see a demo, try entering a pharmaceutical query like 'diabetes drug market analysis' or 'COVID-19 vaccine patents'. I'll guide you through the multi-agent analysis process and explain the results."
+      intro:
+        "CureCoders is an AI-powered pharmaceutical intelligence platform. Use our multi-agent system to analyze markets, patents, clinical trials, and generate comprehensive reports for strategic decision making.",
+
+      features:
+        "Key features include Market Intelligence for competitive analysis, Patent Analysis for IP landscape, Clinical Data for trial insights, Advanced Reporting with charts, Document Management, and Smart Search capabilities.",
+
+      help: "I can help you navigate the platform, explain features, provide voice guidance, and narrate research results. Try uploading a document, running a search query, or exploring the different agent capabilities.",
+
+      demo: "To see a demo, try entering a pharmaceutical query like 'diabetes drug market analysis' or 'COVID-19 vaccine patents'. I'll guide you through the multi-agent analysis process and explain the results.",
     };
 
-    speak(commands[command] || "I'm here to help with your pharmaceutical research. What would you like to know?");
+    speak(
+      commands[command] ||
+        "I'm here to help with your pharmaceutical research. What would you like to know?",
+    );
   };
 
   if (showWelcome) {
@@ -38,15 +59,20 @@ const VoiceAssistantUI: React.FC = () => {
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                <svg
+                  className="w-6 h-6"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
                 </svg>
               </div>
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-lg">Meet ARIA 🎤</h4>
               <p className="text-cyan-100 text-sm mt-1">
-                Your AI pharmaceutical research assistant is here to help! Enable voice guidance for a better experience.
+                Your AI pharmaceutical research assistant is here to help!
+                Enable voice guidance for a better experience.
               </p>
               <div className="flex space-x-2 mt-3">
                 <button
@@ -70,8 +96,18 @@ const VoiceAssistantUI: React.FC = () => {
               onClick={() => setShowWelcome(false)}
               className="text-cyan-200 hover:text-white transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -84,70 +120,89 @@ const VoiceAssistantUI: React.FC = () => {
     <>
       {/* Main Voice Assistant Button */}
       <div className="fixed bottom-6 right-6 z-50">
-        <div className={`transition-all duration-300 ${isExpanded ? 'mb-4' : ''}`}>
+        <div
+          className={`transition-all duration-300 ${isExpanded ? "mb-4" : ""}`}
+        >
           {/* Quick Commands Panel */}
           {isExpanded && (
             <div className="mb-4 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 w-80 animate-scale-in">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-slate-800 dark:text-slate-200">ARIA Voice Assistant</h4>
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200">
+                  ARIA Voice Assistant
+                </h4>
                 <div className="flex items-center space-x-2">
                   {isSpeaking && (
                     <div className="flex space-x-1">
                       <div className="w-1 h-4 bg-cyan-500 rounded animate-pulse"></div>
-                      <div className="w-1 h-4 bg-cyan-500 rounded animate-pulse" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-1 h-4 bg-cyan-500 rounded animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                      <div
+                        className="w-1 h-4 bg-cyan-500 rounded animate-pulse"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-1 h-4 bg-cyan-500 rounded animate-pulse"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                     </div>
                   )}
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    isEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 
-                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                  }`}>
-                    {isEnabled ? 'Active' : 'Disabled'}
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      isEnabled
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                    }`}
+                  >
+                    {isEnabled ? "Active" : "Disabled"}
                   </span>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <button
-                  onClick={isListening ? stopListening : startListening}
+                  onClick={toggleRecording}
                   disabled={!isEnabled}
                   className={`w-full text-left px-3 py-3 text-sm rounded-lg transition-colors font-medium flex items-center justify-between shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isListening 
-                      ? 'bg-red-500 text-white animate-pulse' 
-                      : 'bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600'
+                    isListening
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600"
                   }`}
                 >
-                  <span>{isListening ? '🎙️ Listening (Click to stop)...' : '🎙️ Tap to Chat with ARIA'}</span>
-                  {isListening && <span className="flex h-3 w-3 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                  </span>}
+                  <span>
+                    {isListening
+                      ? "🎙️ Listening (Click to stop)..."
+                      : "🎙️ Tap to Chat with ARIA"}
+                  </span>
+                  {isListening && (
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                    </span>
+                  )}
                 </button>
                 <div className="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
 
                 <button
-                  onClick={() => handleQuickCommands('intro')}
+                  onClick={() => handleQuickCommands("intro")}
                   disabled={!isEnabled}
                   className="w-full text-left px-3 py-2 text-sm bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🎯 Platform Introduction
                 </button>
                 <button
-                  onClick={() => handleQuickCommands('features')}
+                  onClick={() => handleQuickCommands("features")}
                   disabled={!isEnabled}
                   className="w-full text-left px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🚀 Key Features Overview
                 </button>
                 <button
-                  onClick={() => handleQuickCommands('demo')}
+                  onClick={() => handleQuickCommands("demo")}
                   disabled={!isEnabled}
                   className="w-full text-left px-3 py-2 text-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🎪 Quick Demo Guide
                 </button>
                 <button
-                  onClick={() => handleQuickCommands('help')}
+                  onClick={() => handleQuickCommands("help")}
                   disabled={!isEnabled}
                   className="w-full text-left px-3 py-2 text-sm bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -170,14 +225,18 @@ const VoiceAssistantUI: React.FC = () => {
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className={`relative w-16 h-16 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 ${
-              isEnabled 
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white' 
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+              isEnabled
+                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
             }`}
           >
             {/* Microphone Icon */}
-            <svg className="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+            <svg
+              className="w-8 h-8 mx-auto"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
             </svg>
 
             {/* Speaking Animation */}
@@ -193,15 +252,21 @@ const VoiceAssistantUI: React.FC = () => {
                   toggleVoice();
                 }}
                 className={`w-6 h-6 rounded-full border-2 border-white shadow-lg transition-all duration-200 ${
-                  isEnabled 
-                    ? 'bg-green-500 hover:bg-green-600' 
-                    : 'bg-red-500 hover:bg-red-600'
+                  isEnabled
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-red-500 hover:bg-red-600"
                 }`}
-                title={isEnabled ? 'Disable Voice Assistant' : 'Enable Voice Assistant'}
+                title={
+                  isEnabled
+                    ? "Disable Voice Assistant"
+                    : "Enable Voice Assistant"
+                }
               >
-                <div className={`w-2 h-2 bg-white rounded-full mx-auto transition-transform duration-200 ${
-                  isEnabled ? 'scale-100' : 'scale-0'
-                }`}></div>
+                <div
+                  className={`w-2 h-2 bg-white rounded-full mx-auto transition-transform duration-200 ${
+                    isEnabled ? "scale-100" : "scale-0"
+                  }`}
+                ></div>
               </button>
             </div>
 
@@ -211,22 +276,38 @@ const VoiceAssistantUI: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    isListening ? stopListening() : startListening();
+                    toggleRecording();
                   }}
                   className={`w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all duration-200 ${
-                    isListening 
-                      ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                      : 'bg-pink-500 hover:bg-pink-600'
+                    isListening
+                      ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                      : "bg-pink-500 hover:bg-pink-600"
                   }`}
-                  title={isListening ? 'Stop Listening' : 'Chat with ARIA'}
+                  title={isListening ? "Stop Listening" : "Chat with ARIA"}
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     {isListening ? (
                       // Stop icon
-                      <rect x="6" y="6" width="12" height="12" fill="currentColor" />
+                      <rect
+                        x="6"
+                        y="6"
+                        width="12"
+                        height="12"
+                        fill="currentColor"
+                      />
                     ) : (
                       // Chat/Mic icon
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
                     )}
                   </svg>
                 </button>
